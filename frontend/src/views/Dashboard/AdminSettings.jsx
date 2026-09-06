@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useRef} from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { Settings, Upload, Camera, Loader2, X } from "lucide-react";
+import { Settings, Upload, Camera, Loader2, X, Plus, Trash2 } from "lucide-react";
 import { getSettings, updateSettings } from "@/services/settings.api";
 import { Button } from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -45,6 +45,9 @@ export default function AdminSettings({ children }) {
   const [tiktokEdited, setTiktokEdited] = useState(false);
   const [ytEdited, setYtEdited] = useState(false);
 
+  const [metaPixelsList, setMetaPixelsList] = useState([]);
+  const [isPixelsLoaded, setIsPixelsLoaded] = useState(false);
+
   const displaySiteName = siteNameEdited ? siteName : (data?.siteName || "");
   const displayLogo = logoPreview || data?.logo || "";
   const displayEmail = emailEdited ? contactEmail : (data?.contactEmail || "");
@@ -55,6 +58,38 @@ export default function AdminSettings({ children }) {
   const displayInstagramUrl = instaEdited ? instagramUrl : (data?.instagramUrl || "");
   const displayTiktokUrl = tiktokEdited ? tiktokUrl : (data?.tiktokUrl || "");
   const displayYoutubeUrl = ytEdited ? youtubeUrl : (data?.youtubeUrl || "");
+
+  useEffect(() => {
+    if (data && !isPixelsLoaded) {
+      if (Array.isArray(data.metaPixels)) {
+        setMetaPixelsList(data.metaPixels);
+      } else if (data.metaPixelId) {
+        setMetaPixelsList(
+          data.metaPixelId.split(",").map((id, idx) => ({
+            name: `Pixel ${idx + 1}`,
+            pixelId: id.trim(),
+          }))
+        );
+      } else {
+        setMetaPixelsList([]);
+      }
+      setIsPixelsLoaded(true);
+    }
+  }, [data, isPixelsLoaded]);
+
+  const handleAddPixel = () => {
+    setMetaPixelsList((prev) => [...prev, { name: "", pixelId: "" }]);
+  };
+
+  const handlePixelChange = (index, field, value) => {
+    setMetaPixelsList((prev) =>
+      prev.map((item, idx) => (idx === index ? { ...item, [field]: value } : item))
+    );
+  };
+
+  const handleRemovePixel = (index) => {
+    setMetaPixelsList((prev) => prev.filter((_, idx) => idx !== index));
+  };
 
   const handleSiteNameChange = (e) => {
     setSiteNameEdited(true);
@@ -77,6 +112,9 @@ export default function AdminSettings({ children }) {
       setInstaEdited(false);
       setTiktokEdited(false);
       setYtEdited(false);
+      if (Array.isArray(updatedData?.metaPixels)) {
+        setMetaPixelsList(updatedData.metaPixels);
+      }
       if (res?.data?.logo || res?.logo) {
         setLogoPreview(res?.data?.logo || res?.logo);
         setLogoFile(null);
@@ -125,6 +163,17 @@ export default function AdminSettings({ children }) {
     if (logoFile) {
       logo = await toBase64(logoFile);
     }
+
+    const validPixels = metaPixelsList.map((item) => ({
+      name: item.name ? item.name.trim() : "",
+      pixelId: item.pixelId ? item.pixelId.trim() : "",
+    }));
+
+    const legacyPixelIdStr = validPixels
+      .map((item) => item.pixelId)
+      .filter((id) => /^\d+$/.test(id))
+      .join(",");
+
     mutation.mutate({
       siteName: displaySiteName,
       logo,
@@ -136,6 +185,8 @@ export default function AdminSettings({ children }) {
       instagramUrl: displayInstagramUrl,
       tiktokUrl: displayTiktokUrl,
       youtubeUrl: displayYoutubeUrl,
+      metaPixelId: legacyPixelIdStr,
+      metaPixels: validPixels,
     });
   };
 
@@ -280,6 +331,73 @@ export default function AdminSettings({ children }) {
             />
             <p className="mt-1 text-xs text-muted-foreground">Go to Google Maps → Share → Embed a map → Copy the embed URL (starts with https://www.google.com/maps/embed)</p>
           </div>
+        </div>
+
+        <div className="border-t border-border pt-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-base font-semibold text-foreground">Meta Pixel Manager (Facebook Pixel)</h3>
+              <p className="text-xs text-muted-foreground">Add and manage multiple Meta Pixel IDs with custom names/labels.</p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleAddPixel}
+              className="flex items-center gap-1.5"
+            >
+              <Plus className="size-4" />
+              Add New Pixel
+            </Button>
+          </div>
+
+          {metaPixelsList.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border p-6 text-center">
+              <p className="text-sm text-muted-foreground">No Meta Pixels added yet.</p>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleAddPixel}
+                className="mt-2 text-primary hover:text-primary"
+              >
+                + Click to Add First Meta Pixel
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {metaPixelsList.map((pixel, index) => (
+                <div key={index} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 rounded-xl border border-border p-3 bg-muted/20">
+                  <div className="flex-1">
+                    <label className="mb-1 block text-xs font-medium text-muted-foreground">Pixel Name / Label</label>
+                    <Input
+                      value={pixel.name || ""}
+                      onChange={(e) => handlePixelChange(index, "name", e.target.value)}
+                      placeholder="e.g. Main Ad Account"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="mb-1 block text-xs font-medium text-muted-foreground">Pixel ID (Numbers Only)</label>
+                    <Input
+                      value={pixel.pixelId || ""}
+                      onChange={(e) => handlePixelChange(index, "pixelId", e.target.value)}
+                      placeholder="e.g. 1695301035353899"
+                    />
+                  </div>
+                  <div className="sm:self-end sm:mb-1">
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePixel(index)}
+                      className="flex h-10 w-10 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                      title="Remove Pixel"
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="border-t border-border pt-6 space-y-4">

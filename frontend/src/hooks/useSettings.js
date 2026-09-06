@@ -38,6 +38,8 @@ const useSettings = () => {
     instagramUrl: data?.instagramUrl || "",
     tiktokUrl: data?.tiktokUrl || "",
     youtubeUrl: data?.youtubeUrl || "",
+    metaPixelId: data?.metaPixelId || "",
+    metaPixels: Array.isArray(data?.metaPixels) ? data.metaPixels : [],
     isLoading,
   };
 };

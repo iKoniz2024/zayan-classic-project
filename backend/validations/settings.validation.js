@@ -1,5 +1,10 @@
 const { z } = require("zod");
 
+const metaPixelSchema = z.object({
+  name: z.string().trim().optional().default(""),
+  pixelId: z.string().trim().regex(/^[0-9]*$/, "Pixel ID must contain numbers only").optional().default(""),
+});
+
 const updateSettingsSchema = z.object({
   siteName: z.string().trim().min(1, "Site name is required"),
   logo: z.string().min(1, "Logo cannot be empty"),
@@ -11,6 +16,8 @@ const updateSettingsSchema = z.object({
   instagramUrl: z.string().trim().optional().default(""),
   tiktokUrl: z.string().trim().optional().default(""),
   youtubeUrl: z.string().trim().optional().default(""),
+  metaPixelId: z.string().trim().regex(/^[0-9,\s]*$/, "Meta Pixel ID must contain numbers and commas only").optional().default(""),
+  metaPixels: z.array(metaPixelSchema).optional().default([]),
 });
 
 module.exports = {

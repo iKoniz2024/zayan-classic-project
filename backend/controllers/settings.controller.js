@@ -18,7 +18,7 @@ const getSettings = async (req, res) => {
 
 const updateSettings = async (req, res) => {
   try {
-    const { siteName, logo, contactEmail, contactPhone, address, googleMapLink, facebookUrl, instagramUrl, tiktokUrl, youtubeUrl } = req.body;
+    const { siteName, logo, contactEmail, contactPhone, address, googleMapLink, facebookUrl, instagramUrl, tiktokUrl, youtubeUrl, metaPixelId, metaPixels } = req.body;
 
     const updateData = {};
 
@@ -32,6 +32,8 @@ const updateSettings = async (req, res) => {
     if (instagramUrl !== undefined) updateData.instagramUrl = instagramUrl;
     if (tiktokUrl !== undefined) updateData.tiktokUrl = tiktokUrl;
     if (youtubeUrl !== undefined) updateData.youtubeUrl = youtubeUrl;
+    if (metaPixelId !== undefined) updateData.metaPixelId = metaPixelId;
+    if (metaPixels !== undefined) updateData.metaPixels = metaPixels;
 
     if (Object.keys(updateData).length === 0) {
       return res.status(400).json({ message: "No data to update" });

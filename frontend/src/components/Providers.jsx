@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/context/ThemeProvider";
 import { Toaster } from "react-hot-toast";
 import { HelmetProvider } from "react-helmet-async";
 import useSettings from "@/hooks/useSettings";
+import MetaPixel from "@/components/MetaPixel";
 
 function DynamicFaviconUpdater() {
   useSettings();
@@ -31,6 +32,7 @@ export default function Providers({ children }) {
           <CartProvider>
             <QueryClientProvider client={queryClient}>
               <DynamicFaviconUpdater />
+              <MetaPixel />
               {children}
               <Toaster
                 position="top-right"
