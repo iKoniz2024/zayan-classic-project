@@ -61,13 +61,22 @@ export default function AdminSettings({ children }) {
 
   useEffect(() => {
     if (data && !isPixelsLoaded) {
-      if (Array.isArray(data.metaPixels)) {
-        setMetaPixelsList(data.metaPixels);
+      if (Array.isArray(data.metaPixels) && data.metaPixels.length > 0) {
+        setMetaPixelsList(
+          data.metaPixels.map((p) => ({
+            name: p.name || "",
+            pixelId: p.pixelId || "",
+            accessToken: p.accessToken || "",
+            testEventCode: p.testEventCode || "",
+          }))
+        );
       } else if (data.metaPixelId) {
         setMetaPixelsList(
           data.metaPixelId.split(",").map((id, idx) => ({
             name: `Pixel ${idx + 1}`,
             pixelId: id.trim(),
+            accessToken: data.metaAccessToken || "",
+            testEventCode: data.metaTestEventCode || "",
           }))
         );
       } else {
@@ -78,7 +87,7 @@ export default function AdminSettings({ children }) {
   }, [data, isPixelsLoaded]);
 
   const handleAddPixel = () => {
-    setMetaPixelsList((prev) => [...prev, { name: "", pixelId: "" }]);
+    setMetaPixelsList((prev) => [...prev, { name: "", pixelId: "", accessToken: "", testEventCode: "" }]);
   };
 
   const handlePixelChange = (index, field, value) => {
@@ -167,12 +176,17 @@ export default function AdminSettings({ children }) {
     const validPixels = metaPixelsList.map((item) => ({
       name: item.name ? item.name.trim() : "",
       pixelId: item.pixelId ? item.pixelId.trim() : "",
+      accessToken: item.accessToken ? item.accessToken.trim() : "",
+      testEventCode: item.testEventCode ? item.testEventCode.trim() : "",
     }));
 
     const legacyPixelIdStr = validPixels
       .map((item) => item.pixelId)
       .filter((id) => /^\d+$/.test(id))
       .join(",");
+
+    const primaryAccessToken = validPixels.find((p) => p.accessToken)?.accessToken || "";
+    const primaryTestCode = validPixels.find((p) => p.testEventCode)?.testEventCode || "";
 
     mutation.mutate({
       siteName: displaySiteName,
@@ -186,6 +200,8 @@ export default function AdminSettings({ children }) {
       tiktokUrl: displayTiktokUrl,
       youtubeUrl: displayYoutubeUrl,
       metaPixelId: legacyPixelIdStr,
+      metaAccessToken: primaryAccessToken,
+      metaTestEventCode: primaryTestCode,
       metaPixels: validPixels,
     });
   };
@@ -365,34 +381,55 @@ export default function AdminSettings({ children }) {
               </Button>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {metaPixelsList.map((pixel, index) => (
-                <div key={index} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 rounded-xl border border-border p-3 bg-muted/20">
-                  <div className="flex-1">
-                    <label className="mb-1 block text-xs font-medium text-muted-foreground">Pixel Name / Label</label>
-                    <Input
-                      value={pixel.name || ""}
-                      onChange={(e) => handlePixelChange(index, "name", e.target.value)}
-                      placeholder="e.g. Main Ad Account"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <label className="mb-1 block text-xs font-medium text-muted-foreground">Pixel ID (Numbers Only)</label>
-                    <Input
-                      value={pixel.pixelId || ""}
-                      onChange={(e) => handlePixelChange(index, "pixelId", e.target.value)}
-                      placeholder="e.g. 1695301035353899"
-                    />
-                  </div>
-                  <div className="sm:self-end sm:mb-1">
+                <div key={index} className="rounded-xl border border-border p-4 bg-muted/20 space-y-3 relative">
+                  <div className="flex items-center justify-between border-b border-border pb-2">
+                    <span className="text-xs font-semibold text-primary">Pixel #{index + 1} Configuration</span>
                     <button
                       type="button"
                       onClick={() => handleRemovePixel(index)}
-                      className="flex h-10 w-10 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                       title="Remove Pixel"
                     >
                       <Trash2 className="size-4" />
                     </button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-muted-foreground">Pixel Name / Label</label>
+                      <Input
+                        value={pixel.name || ""}
+                        onChange={(e) => handlePixelChange(index, "name", e.target.value)}
+                        placeholder="e.g. Main Ad Account"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-muted-foreground">Dataset ID / Pixel ID (Numbers Only)</label>
+                      <Input
+                        value={pixel.pixelId || ""}
+                        onChange={(e) => handlePixelChange(index, "pixelId", e.target.value)}
+                        placeholder="e.g. 1767220244512872"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="sm:col-span-2">
+                      <label className="mb-1 block text-xs font-medium text-muted-foreground">CAPI Access Token (Server-Side Tracking)</label>
+                      <Input
+                        value={pixel.accessToken || ""}
+                        onChange={(e) => handlePixelChange(index, "accessToken", e.target.value)}
+                        placeholder="e.g. EAA19QSSR708..."
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-muted-foreground">Test Event Code (Optional)</label>
+                      <Input
+                        value={pixel.testEventCode || ""}
+                        onChange={(e) => handlePixelChange(index, "testEventCode", e.target.value)}
+                        placeholder="e.g. TEST81289"
+                      />
+                    </div>
                   </div>
                 </div>
               ))}

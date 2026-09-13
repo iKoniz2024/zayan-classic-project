@@ -29,7 +29,7 @@ export async function generateMetadata() {
   try {
     const apiUrl = getApiUrl();
     const res = await fetch(`${apiUrl}/settings`, {
-      next: { revalidate: 300 }, // Cache for 5 minutes
+      next: { revalidate: 3600 }, // Cache for 1 hour
     });
     
     if (res.ok) {

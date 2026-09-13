@@ -8,7 +8,7 @@ export default function MetaPixel() {
 
   let pixelIds = [];
 
-  if (Array.isArray(metaPixels)) {
+  if (Array.isArray(metaPixels) && metaPixels.length > 0) {
     pixelIds = metaPixels
       .map((item) => (item?.pixelId || "").trim())
       .filter((id) => /^\d+$/.test(id));

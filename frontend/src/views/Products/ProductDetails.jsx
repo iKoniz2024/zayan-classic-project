@@ -49,6 +49,7 @@ function ProductSkeleton() {
 }
 
 import usePageTitle from "@/hooks/usePageTitle";
+import { trackMetaPixelEvent } from "@/utils/metaPixel";
 
 export default function ProductDetails({ children }) {
   const { siteName } = useSettings();
@@ -91,7 +92,20 @@ export default function ProductDetails({ children }) {
     if (id) {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
-  }, [id]);
+    if (product && product._id) {
+      const currentPrice = product.discountPercentage > 0
+        ? Number((product.price * (1 - product.discountPercentage / 100)).toFixed(2))
+        : Number(product.price || 0);
+
+      trackMetaPixelEvent("ViewContent", {
+        content_name: product.title,
+        content_ids: [String(product._id)],
+        content_type: "product",
+        value: currentPrice,
+        currency: "BDT",
+      });
+    }
+  }, [id, product]);
 
   const allImages = useMemo(() => {
     if (!product) return [];

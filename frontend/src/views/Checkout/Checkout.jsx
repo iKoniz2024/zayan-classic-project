@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from 'next/navigation';
 
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -43,6 +44,7 @@ function CheckoutSkeleton() {
 }
 
 import usePageTitle from "@/hooks/usePageTitle";
+import { trackMetaPixelEvent } from "@/utils/metaPixel";
 
 export default function Checkout({ children }) {
   const { siteName } = useSettings();
@@ -95,10 +97,36 @@ export default function Checkout({ children }) {
   const shipping = isFreeShipping ? 0 : (isInsideDhaka ? SHIPPING_INSIDE_DHAKA : SHIPPING_OUTSIDE_DHAKA);
   const total = totalPrice + shipping;
 
+  useEffect(() => {
+    if (items.length > 0) {
+      trackMetaPixelEvent("InitiateCheckout", {
+        value: Number(Number(total || 0).toFixed(2)),
+        currency: "BDT",
+        content_type: "product",
+        content_ids: items.map((i) => String(i.productId || "")),
+        num_items: Number(totalItems || 1),
+      });
+    }
+  }, [items.length]);
+
   const orderMutation = useMutation({
     mutationFn: createGuestOrder,
     onSuccess: (data) => {
       toast.success("Order placed successfully!");
+
+      // Client-side Purchase event
+      trackMetaPixelEvent("Purchase", {
+        value: Number(Number(total || 0).toFixed(2)),
+        currency: "BDT",
+        content_type: "product",
+        content_ids: items.map((i) => String(i.productId || "")),
+        contents: items.map((i) => ({
+          id: String(i.productId || ""),
+          quantity: Number(i.quantity || 1),
+        })),
+        num_items: Number(totalItems || 1),
+      });
+
       clearLocalCart();
       refetchCartCount(0);
       if (data?.insertedId) {

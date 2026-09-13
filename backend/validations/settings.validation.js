@@ -3,6 +3,8 @@ const { z } = require("zod");
 const metaPixelSchema = z.object({
   name: z.string().trim().optional().default(""),
   pixelId: z.string().trim().regex(/^[0-9]*$/, "Pixel ID must contain numbers only").optional().default(""),
+  accessToken: z.string().trim().optional().default(""),
+  testEventCode: z.string().trim().optional().default(""),
 });
 
 const updateSettingsSchema = z.object({
@@ -17,6 +19,8 @@ const updateSettingsSchema = z.object({
   tiktokUrl: z.string().trim().optional().default(""),
   youtubeUrl: z.string().trim().optional().default(""),
   metaPixelId: z.string().trim().regex(/^[0-9,\s]*$/, "Meta Pixel ID must contain numbers and commas only").optional().default(""),
+  metaAccessToken: z.string().trim().optional().default(""),
+  metaTestEventCode: z.string().trim().optional().default(""),
   metaPixels: z.array(metaPixelSchema).optional().default([]),
 });
 

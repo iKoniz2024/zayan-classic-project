@@ -113,7 +113,7 @@ const Navbar = () => {
                             className="relative hidden sm:flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                         >
                             <ShoppingCart className="size-5" />
-                            {cartCount > 0 && (
+                            {mounted && cartCount > 0 && (
                                 <span className="absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full bg-foreground text-[10px] font-bold text-background">
                                     {cartCount}
                                 </span>

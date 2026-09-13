@@ -3,6 +3,7 @@ const { getDB } = require("../config/db");
 const { sendMail } = require("../config/mail");
 const { withCache, clearCache } = require("../utils/cache");
 const { buildIdQuery } = require("../utils/buildIdQuery");
+const { sendPurchaseEvent } = require("../services/metaCapi.service");
 
 const createOrder = async (req, res) => {
     try {
@@ -123,6 +124,9 @@ const createOrder = async (req, res) => {
 
         const result = await ordersCollection.insertOne(order);
         order._id = result.insertedId;
+
+        // Trigger Meta Conversions API Purchase Event (asynchronous & non-blocking)
+        sendPurchaseEvent(order, req);
 
         await cartsCollection.deleteOne({
             userId: new ObjectId(req.user.id),
