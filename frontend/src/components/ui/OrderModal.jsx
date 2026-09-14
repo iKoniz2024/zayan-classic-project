@@ -1,28 +1,29 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Minus, Plus, ShoppingCart } from "lucide-react";
 
 import toast from "react-hot-toast";
 import { useAddToCart } from "@/hooks/useAddToCart";
 import { formatBDT } from "@/utils/currency";
 
-const FASHION_CATEGORIES = [
-  "shirt", "t-shirt", "polo", "panjabi", "blazer", "waistcoat",
-  "pant", "jeans", "trouser", "jacket", "hoodie", "sweater",
-  "high-neck", "coat", "vest", "shorts", "suit",
-  "shoe", "sneaker", "boot", "sandal", "slipper",
-  "dress", "kurti", "saree", "salwar", "lehenga",
-];
-
 export default function OrderModal({ product, open, onClose }) {
   const router = useRouter();
   const { addToCart } = useAddToCart();
   const [selectedSize, setSelectedSize] = useState(null);
-  const [selectedColor, setSelectedColor] = useState(() => product?.colors?.[0] || null);
-  const [activeDisplayImage, setActiveDisplayImage] = useState(() => product?.colors?.[0]?.image || null);
+  const [selectedColor, setSelectedColor] = useState(null);
+  const [activeDisplayImage, setActiveDisplayImage] = useState(null);
   const [quantity, setQuantity] = useState(1);
+
+  useEffect(() => {
+    if (open && product) {
+      setSelectedSize(null);
+      setSelectedColor(product?.colors?.[0] || null);
+      setActiveDisplayImage(product?.colors?.[0]?.image || null);
+      setQuantity(1);
+    }
+  }, [open, product]);
 
   if (!open || !product) return null;
 
@@ -32,18 +33,8 @@ export default function OrderModal({ product, open, onClose }) {
     : null;
   const isOutOfStock = product.stock === 0;
 
-  const cat = product.category;
-  const productCategory = typeof cat === "string"
-    ? cat.toLowerCase().trim()
-    : typeof cat === "object" && cat?.slug
-      ? cat.slug.toLowerCase().trim()
-      : typeof cat === "object" && cat?.name
-        ? cat.name.toLowerCase().trim()
-        : "";
-  const isFashion = FASHION_CATEGORIES.some(fc => productCategory.includes(fc));
-
   const handleAddToCart = async () => {
-    if (isFashion && product.sizes?.length > 0 && !selectedSize) {
+    if (product.sizes?.length > 0 && !selectedSize) {
       toast.error("Please select a size");
       return;
     }
@@ -149,7 +140,7 @@ export default function OrderModal({ product, open, onClose }) {
               </div>
             )}
 
-            {isFashion && product.sizes?.length > 0 && (
+            {product.sizes?.length > 0 && (
               <div>
                 <p className="mb-2 text-sm font-medium text-foreground">Choose Size</p>
                 <div className="flex flex-wrap gap-2">

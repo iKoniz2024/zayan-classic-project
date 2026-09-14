@@ -102,8 +102,6 @@ const warmUpCache = async (db) => {
                     warrantyInformation: 0, 
                     shippingInformation: 0, 
                     returnPolicy: 0, 
-                    sizes: 0,
-                    colors: 0,
                     tags: 0,
                     sku: 0,
                     weight: 0,
