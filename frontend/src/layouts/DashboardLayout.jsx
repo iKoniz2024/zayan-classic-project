@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Sidebar from "@/views/sharedPages/Sidebar";
+import BottomNavbar from "@/components/shared/BottomNavbar";
 import { useRouter } from "next/navigation";
 import { Sun, Moon, Menu } from "lucide-react";
 import useTheme from "@/hooks/useTheme";
@@ -22,19 +23,24 @@ export default function DashboardLayout({ children }) {
 
   return (
     <div className="flex h-screen flex-col bg-muted/20">
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-md sm:px-6">
-        <button
-          onClick={() => setSidebarOpen(true)}
-          className="flex size-9 items-center justify-center rounded-md border transition-colors hover:bg-muted lg:hidden"
-          title="Open menu"
-        >
-          <Menu className="size-4" />
-        </button>
-        <div />
+      <header className="sticky top-0 z-30 flex h-14 sm:h-16 items-center justify-between border-b border-border bg-background/90 px-3 backdrop-blur-md sm:px-6">
         <div className="flex items-center gap-3">
           <button
+            onClick={() => setSidebarOpen(true)}
+            className="flex size-9 items-center justify-center rounded-lg border border-border transition-colors hover:bg-muted lg:hidden"
+            title="Open menu"
+          >
+            <Menu className="size-4" />
+          </button>
+          <span className="text-xs sm:text-sm font-bold text-foreground tracking-tight">
+            ZAYAN <span className="text-muted-foreground font-medium">Admin</span>
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button
             onClick={toggleTheme}
-            className="flex size-9 items-center justify-center rounded-md border transition-colors hover:bg-muted"
+            className="flex size-9 items-center justify-center rounded-lg border border-border transition-colors hover:bg-muted"
             title={mounted && theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
           >
             {mounted && theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
@@ -89,10 +95,12 @@ export default function DashboardLayout({ children }) {
 
       <div className="flex flex-1 overflow-hidden">
         <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto p-3.5 pb-24 sm:p-6 lg:p-8 lg:pb-8">
           {children}
         </main>
       </div>
+
+      <BottomNavbar />
     </div>
   );
 }

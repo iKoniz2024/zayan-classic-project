@@ -66,7 +66,7 @@ export default function AdminChangePassword() {
         <p className="text-muted-foreground">Secure your account with a new password.</p>
       </div>
 
-      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+      <div className="rounded-xl border border-border bg-card p-4 sm:p-6 shadow-sm w-full max-w-full overflow-hidden">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div>
             <label className="mb-2 block text-sm font-medium text-foreground">

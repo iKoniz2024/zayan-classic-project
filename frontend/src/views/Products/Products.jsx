@@ -401,7 +401,7 @@ export default function Products({ initialCategories, initialProducts }) {
 
             <div className="pt-4">
               {showSkeleton ? (
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-2 gap-3 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3">
                   {Array.from({ length: 12 }).map((_, i) => (
                     <ProductSkeleton key={i} />
                   ))}
@@ -421,7 +421,7 @@ export default function Products({ initialCategories, initialProducts }) {
                   )}
                 </div>
               ) : (
-                <div className={`grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 transition-opacity duration-150 ${isFetching ? "opacity-50" : "opacity-100"}`}>
+                <div className={`grid grid-cols-2 gap-3 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3 transition-opacity duration-150 ${isFetching ? "opacity-50" : "opacity-100"}`}>
                   {filteredProducts.map((product, i) => (
                     <ProductCard key={product._id} product={product} index={i} />
                   ))}

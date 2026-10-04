@@ -375,7 +375,7 @@ export default function AdminProducts({ children }) {
         animate={{ opacity: 1, y: 0 }}
         className="rounded-xl border border-border bg-card p-4 shadow-sm"
       >
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -385,7 +385,7 @@ export default function AdminProducts({ children }) {
               className="pl-9"
             />
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
@@ -409,7 +409,7 @@ export default function AdminProducts({ children }) {
             <select
               value={discountFilter}
               onChange={(e) => setDiscountFilter(e.target.value)}
-              className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-ring"
+              className="col-span-2 sm:col-span-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-ring"
             >
               <option value="">All Discounts</option>
               <option value="with-discount">With Discount</option>
@@ -802,7 +802,7 @@ export default function AdminProducts({ children }) {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+            <table className="w-full min-w-[650px] text-left text-sm">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
                   <th className="px-5 py-3 font-medium">Product</th>

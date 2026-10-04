@@ -5,6 +5,7 @@ import Navbar from "@/views/sharedPages/Navbar";
 import Footer from "@/views/sharedPages/Footer";
 import FloatingButtons from "@/components/ui/FloatingButtons";
 import StickyCardDrawer from "@/components/shared/StickyCardDrawer";
+import BottomNavbar from "@/components/shared/BottomNavbar";
 
 export default function MainLayout({ children }) {
   return (
@@ -14,7 +15,7 @@ export default function MainLayout({ children }) {
           <Navbar />
         </Suspense>
 
-        <main className="flex-1">
+        <main className="flex-1 pb-20 lg:pb-0">
           {children}
         </main>
 
@@ -23,6 +24,7 @@ export default function MainLayout({ children }) {
 
       <FloatingButtons />
       <StickyCardDrawer />
+      <BottomNavbar />
     </>
   );
 }

@@ -227,9 +227,9 @@ export default function AdminSettings({ children }) {
 
       <form
         onSubmit={handleSubmit}
-        className="w-full space-y-6 rounded-xl border border-border bg-card p-6 shadow-sm"
+        className="w-full max-w-full overflow-hidden space-y-6 rounded-xl border border-border bg-card p-4 sm:p-6 shadow-sm"
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           <div>
             <label className="mb-1 block text-sm font-medium text-foreground">Site Name</label>
             <Input
@@ -289,21 +289,21 @@ export default function AdminSettings({ children }) {
                 const file = e.dataTransfer.files?.[0];
                 if (file) handleLogoChange(file);
               }}
-              className={`cursor-pointer rounded-xl border-2 border-dashed p-5 transition-all duration-200 hover:border-primary/50 hover:bg-primary/5 ${logoDrag ? "border-primary bg-primary/10 scale-[1.01]" : "border-border"}`}
+              className={`cursor-pointer rounded-xl border-2 border-dashed p-4 sm:p-5 transition-all duration-200 hover:border-primary/50 hover:bg-primary/5 ${logoDrag ? "border-primary bg-primary/10 scale-[1.01]" : "border-border"}`}
             >
               {displayLogo ? (
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
                   <div className="relative">
                     <img
                       src={displayLogo}
                       alt="Logo"
-                      className="h-16 w-16 rounded-xl object-contain ring-2 ring-border"
+                      className="h-14 w-14 sm:h-16 sm:w-16 rounded-xl object-contain ring-2 ring-border"
                     />
                     <div className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
                       <Camera className="size-3" />
                     </div>
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground">Change logo</p>
                     {logoFile && (
                       <p className="text-xs text-muted-foreground">{formatFileSize(logoFile.size)}</p>
@@ -318,7 +318,7 @@ export default function AdminSettings({ children }) {
                       setLogoPreview("");
                       if (logoInputRef.current) logoInputRef.current.value = "";
                     }}
-                    className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                    className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive self-end sm:self-center"
                   >
                     <X className="size-4" />
                   </button>
@@ -350,9 +350,9 @@ export default function AdminSettings({ children }) {
         </div>
 
         <div className="border-t border-border pt-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-base font-semibold text-foreground">Meta Pixel Manager (Facebook Pixel)</h3>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="min-w-0">
+              <h3 className="text-sm sm:text-base font-semibold text-foreground">Meta Pixel Manager (Facebook Pixel)</h3>
               <p className="text-xs text-muted-foreground">Add and manage multiple Meta Pixel IDs with custom names/labels.</p>
             </div>
             <Button
@@ -360,7 +360,7 @@ export default function AdminSettings({ children }) {
               variant="outline"
               size="sm"
               onClick={handleAddPixel}
-              className="flex items-center gap-1.5"
+              className="flex items-center gap-1.5 shrink-0 self-start sm:self-auto"
             >
               <Plus className="size-4" />
               Add New Pixel

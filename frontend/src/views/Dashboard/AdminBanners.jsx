@@ -329,13 +329,17 @@ export default function AdminBanners({ children }) {
               >
                 <div className="px-4 py-4 sm:px-5">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-3">
-                      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                        <Image className="size-4" />
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="relative h-14 sm:h-16 w-24 sm:w-32 shrink-0 overflow-hidden rounded-lg border border-border bg-muted flex items-center justify-center">
+                        {banner.image ? (
+                          <img src={banner.image} alt={banner.title} className="h-full w-full object-cover" />
+                        ) : (
+                          <Image className="size-5 text-muted-foreground" />
+                        )}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-medium text-foreground">{banner.title}</p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="font-semibold text-foreground text-xs sm:text-sm truncate">{banner.title}</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
                           {banner.isActive ? "Active" : "Inactive"}
                         </p>
                       </div>

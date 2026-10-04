@@ -450,7 +450,7 @@ export default function AdminProductDetails({ children }) {
 
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="rounded-xl border border-border bg-card p-6 shadow-sm"
+          className="w-full max-w-full overflow-hidden rounded-xl border border-border bg-card p-3.5 sm:p-6 shadow-sm"
         >
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-foreground">Edit Product</h2>
@@ -534,7 +534,7 @@ export default function AdminProductDetails({ children }) {
                         <select
                           value={measurementPreset}
                           onChange={(e) => setMeasurementPreset(e.target.value)}
-                          className="rounded-md border border-border bg-background px-2.5 py-1 text-xs outline-none focus:border-ring font-medium"
+                          className="w-full sm:w-auto max-w-full truncate rounded-md border border-border bg-background px-2.5 py-1 text-xs outline-none focus:border-ring font-medium"
                         >
                           {Object.entries(MEASUREMENT_PRESETS).map(([key, preset]) => (
                             <option key={key} value={key}>

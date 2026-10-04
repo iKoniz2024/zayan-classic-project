@@ -146,10 +146,10 @@ export default function AdminOrders({ children }) {
         </h1>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-1 px-1 [&::-webkit-scrollbar]:hidden shrink-0">
         <button
           onClick={() => setStatusFilter("all")}
-          className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${statusFilter === "all"
+          className={`rounded-full border px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors ${statusFilter === "all"
               ? "border-primary bg-primary text-primary-foreground"
               : "border-border bg-card text-muted-foreground hover:bg-muted"
             }`}
@@ -160,7 +160,7 @@ export default function AdminOrders({ children }) {
           <button
             key={status}
             onClick={() => setStatusFilter(status)}
-            className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${statusFilter === status
+            className={`rounded-full border px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors ${statusFilter === status
                 ? "border-primary bg-primary text-primary-foreground"
                 : "border-border bg-card text-muted-foreground hover:bg-muted"
               }`}
@@ -184,7 +184,7 @@ export default function AdminOrders({ children }) {
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-border">
-          <table className="w-full text-left text-sm">
+          <table className="w-full min-w-[700px] text-left text-sm">
             <thead className="border-b border-border bg-muted/50">
               <tr>
                 <th className="px-4 py-3 font-medium text-muted-foreground">Order ID</th>

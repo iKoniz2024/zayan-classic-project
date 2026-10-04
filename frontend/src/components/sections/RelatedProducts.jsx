@@ -87,8 +87,8 @@ function CompactProductCard({ product, index }) {
           }),
         }}
       >
-        <div className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
-          {/* Image & Price Container */}
+        <div className="group relative flex h-full flex-col justify-between overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+          {/* Image Container */}
           <Link
             href={`/product/${product._id}`}
             className="relative block aspect-square w-full overflow-hidden bg-muted"
@@ -124,18 +124,6 @@ function CompactProductCard({ product, index }) {
               decoding="async"
             />
 
-            {/* Price Pill Overlay */}
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center gap-1.5 rounded-lg bg-background/95 px-2.5 py-1 shadow-sm border border-border/60 backdrop-blur-md whitespace-nowrap">
-              <span className="text-xs sm:text-sm font-bold text-foreground">
-                {formatBDT(hasDiscount ? discountedPrice : product.price)}
-              </span>
-              {hasDiscount && (
-                <span className="text-[10px] sm:text-xs text-muted-foreground line-through font-normal">
-                  {formatBDT(product.price)}
-                </span>
-              )}
-            </div>
-
             {isOutOfStock && (
               <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/70 backdrop-blur-sm">
                 <span className="rounded-full bg-destructive px-2 py-0.5 text-[10px] font-semibold text-destructive-foreground">
@@ -145,12 +133,30 @@ function CompactProductCard({ product, index }) {
             )}
           </Link>
 
+          {/* Title & Price Body */}
+          <div className="flex flex-1 flex-col justify-between p-2.5">
+            <h3 className="line-clamp-2 text-xs font-semibold text-foreground leading-snug min-h-[2.25rem] flex items-start">
+              {product.title}
+            </h3>
+
+            <div className="mt-auto flex items-baseline gap-1 sm:gap-1.5 flex-wrap pt-1.5">
+              <span className="text-xs sm:text-sm font-bold text-foreground">
+                {formatBDT(hasDiscount ? discountedPrice : product.price)}
+              </span>
+              {hasDiscount && (
+                <span className="text-[10px] text-muted-foreground line-through font-normal">
+                  {formatBDT(product.price)}
+                </span>
+              )}
+            </div>
+          </div>
+
           {/* Bottom Order Button */}
           {!isAdmin && (
             <button
               disabled={isOutOfStock}
               onClick={() => setShowModal(true)}
-              className="w-full flex items-center justify-center gap-1.5 bg-foreground py-2 text-xs sm:text-sm font-bold text-background transition-colors hover:bg-foreground/90 disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-1.5 bg-foreground py-2 text-xs sm:text-sm font-bold text-background transition-colors hover:bg-foreground/90 disabled:opacity-50 cursor-pointer mt-auto"
             >
               <ShoppingCart className="size-3.5" />
               <span>{isOutOfStock ? "Unavailable" : "অর্ডার করুন"}</span>

@@ -129,7 +129,7 @@ const getBestSellingProductsInternal = async (db) => {
                 }
             },
             { $sort: { totalSold: -1 } },
-            { $limit: 15 },
+            { $limit: 12 },
             {
                 $lookup: {
                     from: "products",
@@ -166,6 +166,34 @@ const getBestSellingProductsInternal = async (db) => {
             }
         ])
         .toArray();
+
+    if (products.length < 8) {
+        const existingIds = products.map(p => p._id);
+        const needed = 12 - products.length;
+        const extraProducts = await productsCollection
+            .find({ _id: { $nin: existingIds } })
+            .project({
+                description: 0,
+                dimensions: 0,
+                reviews: 0,
+                images: 0,
+                sizeMeasurements: 0,
+                warrantyInformation: 0,
+                shippingInformation: 0,
+                returnPolicy: 0,
+                meta: 0,
+                tags: 0,
+                sku: 0,
+                weight: 0,
+                availabilityStatus: 0,
+                minimumOrderQuantity: 0
+            })
+            .sort({ rating: -1, _id: -1 })
+            .limit(needed)
+            .toArray();
+
+        products = [...products, ...extraProducts];
+    }
 
     return products.map(product => ({
         ...product,
@@ -394,11 +422,11 @@ const getFlashSaleProducts = async (req, res) => {
             const db = getDB();
             const productsCollection = db.collection("products");
 
-            const products = await productsCollection
+            let products = await productsCollection
                 .aggregate([
                     {
                         $match: {
-                            discountPercentage: { $gte: 50 },
+                            discountPercentage: { $gt: 0 },
                             stock: { $gt: 0 }
                         }
                     },
@@ -426,29 +454,43 @@ const getFlashSaleProducts = async (req, res) => {
                         }
                     },
                     {
-                        $limit: 8
+                        $limit: 12
                     }
                 ])
                 .toArray();
 
-            const maxStockResult = await productsCollection
-                .aggregate([
-                    {
-                        $match: {
-                            discountPercentage: { $gte: 50 },
-                            stock: { $gt: 0 }
-                        }
-                    },
-                    {
-                        $group: {
-                            _id: null,
-                            maxStock: { $max: "$stock" }
-                        }
-                    }
-                ])
-                .toArray();
+            if (products.length < 8) {
+                const existingIds = products.map(p => p._id);
+                const needed = 12 - products.length;
+                const extra = await productsCollection
+                    .find({ _id: { $nin: existingIds }, stock: { $gt: 0 } })
+                    .project({
+                        description: 0,
+                        dimensions: 0,
+                        reviews: 0,
+                        images: 0,
+                        sizeMeasurements: 0,
+                        warrantyInformation: 0,
+                        shippingInformation: 0,
+                        returnPolicy: 0,
+                        meta: 0,
+                        tags: 0,
+                        sku: 0,
+                        weight: 0,
+                        availabilityStatus: 0,
+                        minimumOrderQuantity: 0
+                    })
+                    .sort({ _id: -1 })
+                    .limit(needed)
+                    .toArray();
 
-            const maxStock = maxStockResult.length > 0 ? maxStockResult[0].maxStock : 1;
+                products = [...products, ...extra];
+            }
+
+            const maxStock = products.length > 0
+                ? Math.max(...products.map(p => p.stock || 1))
+                : 1;
+
             return { products, maxStock };
         });
 

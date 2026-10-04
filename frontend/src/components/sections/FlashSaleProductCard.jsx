@@ -15,16 +15,16 @@ function StockBar({ stock, maxStock }) {
   const isLow = percentage <= 25;
 
   return (
-    <div className="space-y-1">
-      <div className="flex items-center justify-between">
-        <span className="text-[11px] text-muted-foreground">
+    <div className="space-y-0.5 w-full">
+      <div className="flex items-center justify-end sm:justify-between text-[11px] text-muted-foreground gap-1">
+        <span className="whitespace-nowrap">
           {stock} left
         </span>
-        <span className="text-[11px] text-muted-foreground">
+        <span className="hidden sm:inline">
           {Math.round(percentage)}%
         </span>
       </div>
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+      <div className="hidden sm:block h-1.5 w-full overflow-hidden rounded-full bg-muted">
         <div
           className={`h-full rounded-full transition-all duration-500 ${
             isLow ? "bg-foreground" : "bg-primary"
@@ -99,42 +99,44 @@ export default function FlashSaleProductCard({ product, index, maxStock }) {
               )}
             </div>
 
-            <div className="flex flex-1 flex-col gap-2 p-4">
+            <div className="flex flex-1 flex-col p-2 sm:p-3">
               {product.brand && (
-                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <p className="hidden sm:block text-[10px] sm:text-xs font-medium uppercase tracking-wider text-muted-foreground truncate mb-0.5 sm:mb-1">
                   {product.brand}
                 </p>
               )}
 
-              <h3 className="line-clamp-2 text-sm font-semibold text-foreground sm:text-base">
+              <h3 className="line-clamp-2 text-xs font-semibold text-foreground sm:text-sm leading-tight">
                 {product.title}
               </h3>
 
-              <div className="flex items-baseline gap-2">
-                <span className="text-lg font-bold text-foreground">
-                  {formatBDT(hasDiscount ? discountedPrice : product.price)}
-                </span>
-                {hasDiscount && (
-                  <span className="text-sm text-muted-foreground line-through">
-                    {formatBDT(product.price)}
+              <div className="mt-auto pt-1.5 sm:pt-2 flex items-end justify-between gap-1.5">
+                <div className="flex flex-col justify-end">
+                  <span className="text-xs sm:text-base font-bold text-foreground leading-tight">
+                    {formatBDT(hasDiscount ? discountedPrice : product.price)}
                   </span>
-                )}
-              </div>
+                  {hasDiscount && (
+                    <span className="text-[10px] sm:text-xs text-muted-foreground line-through leading-tight">
+                      {formatBDT(product.price)}
+                    </span>
+                  )}
+                </div>
 
-              {product.stock > 0 && (
-                <StockBar stock={product.stock} maxStock={maxStock} />
-              )}
+                <div className="flex flex-col items-end justify-end text-right min-w-0">
+                  <StockBar stock={product.stock} maxStock={maxStock || 100} />
+                </div>
+              </div>
             </div>
 
             {!isAdmin && (
-              <div className="p-4 pt-0 mt-auto">
+              <div className="p-2 pt-0 sm:p-3 sm:pt-0 mt-auto">
                 <button
                   disabled={product.stock === 0}
                   onClick={(e) => {
                     e.preventDefault();
                     setShowModal(true);
                   }}
-                  className="w-full rounded-lg bg-foreground py-2.5 text-sm font-medium text-background transition-colors hover:bg-foreground/90 disabled:opacity-50"
+                  className="w-full rounded-md sm:rounded-lg bg-foreground py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-background transition-colors hover:bg-foreground/90 disabled:opacity-50 cursor-pointer"
                 >
                   {product.stock === 0 ? "Unavailable" : "অর্ডার করুন"}
                 </button>

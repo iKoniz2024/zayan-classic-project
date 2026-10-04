@@ -43,7 +43,7 @@ export default function NewArrivalsProductCard({ product, index }) {
         }}
         className="shrink-0 w-37.5 sm:w-45"
       >
-        <div className="overflow-hidden rounded-lg border border-border bg-card">
+        <div className="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card">
           <Link
             href={`/product/${product._id}`}
             className="block"
@@ -73,9 +73,13 @@ export default function NewArrivalsProductCard({ product, index }) {
             </div>
           </Link>
 
-          <div className="p-2">
-            <div className="flex items-baseline gap-1">
-              <span className="text-sm font-bold text-foreground">
+          <div className="flex flex-1 flex-col p-2.5">
+            <h3 className="line-clamp-1 text-xs font-semibold text-foreground truncate mb-1">
+              {product.title}
+            </h3>
+
+            <div className="mt-auto flex items-baseline gap-1.5">
+              <span className="text-xs sm:text-sm font-bold text-foreground">
                 {formatBDT(hasDiscount ? discountedPrice : product.price)}
               </span>
               {hasDiscount && (
@@ -87,7 +91,7 @@ export default function NewArrivalsProductCard({ product, index }) {
           </div>
 
           {!isAdmin && (
-            <div className="px-2 pb-2">
+            <div className="p-2.5 pt-0 mt-auto">
               <button
                 disabled={isOutOfStock}
                 onClick={() => setShowModal(true)}

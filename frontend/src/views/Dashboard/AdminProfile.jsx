@@ -95,7 +95,7 @@ export default function AdminProfile() {
 
         {/* Right Column: Edit Form */}
         <div className="col-span-1 md:col-span-2">
-          <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+          <div className="rounded-xl border border-border bg-card p-4 sm:p-6 shadow-sm w-full max-w-full overflow-hidden">
             <h3 className="mb-6 text-lg font-semibold text-foreground border-b border-border pb-3">Edit Profile</h3>
             
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
