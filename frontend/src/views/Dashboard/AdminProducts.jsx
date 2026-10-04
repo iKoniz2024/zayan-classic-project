@@ -497,8 +497,8 @@ export default function AdminProducts({ children }) {
                             );
                           }}
                           className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${selectedSizes.includes(size)
-                              ? "border-foreground bg-foreground text-background"
-                              : "border-border bg-background text-foreground hover:border-muted-foreground"
+                            ? "border-foreground bg-foreground text-background"
+                            : "border-border bg-background text-foreground hover:border-muted-foreground"
                             }`}
                         >
                           {size}

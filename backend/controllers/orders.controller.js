@@ -949,7 +949,7 @@ const sendInvoice = async (req, res) => {
         res.status(500).send({ message: "Failed to send invoice" });
     }
 };
- 
+
 const getDashboardStats = async (req, res) => {
     try {
         const db = getDB();

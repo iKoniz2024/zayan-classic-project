@@ -8,13 +8,20 @@
 
 
 
+import { EventEmitter } from 'events';
+EventEmitter.defaultMaxListeners = 50;
+if (typeof process !== 'undefined' && process.setMaxListeners) {
+  process.setMaxListeners(50);
+}
+
 /** @type {import('next').NextConfig} */
 
 const isVercel = process.env.VERCEL === '1' || Boolean(process.env.VERCEL);
 
 const nextConfig = {
+  allowedDevOrigins: ['localhost', '127.0.0.1'],
   reactStrictMode: true,
-  ...(isVercel ? {} : { output: 'standalone' }),
+  ...(process.env.STANDALONE === 'true' ? { output: 'standalone' } : {}),
   async redirects() {
     return [
       {

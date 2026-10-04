@@ -14,7 +14,7 @@ const uri = process.env.MONGODB_URI || `mongodb://${dbUser}:${dbPass}@cluster0-s
 const client = new MongoClient(uri, {
     serverApi: {
         version: ServerApiVersion.v1,
-        strict: true,
+        strict: false,
         deprecationErrors: true,
     },
 });

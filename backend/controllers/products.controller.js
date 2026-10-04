@@ -174,9 +174,13 @@ const getBestSellingProductsInternal = async (db) => {
 };
 
 const getBestSellingIds = async (db) => {
-    return await withCache("bestSellingIdsSet", 30, async () => {
-        const bestProducts = await getBestSellingProductsInternal(db);
-        return Array.from(new Set(bestProducts.map(p => (p._id ? p._id.toString() : ""))));
+    return await withCache("bestSellingIdsSet", 600, async () => {
+        try {
+            const bestProducts = await getBestSellingProductsInternal(db);
+            return Array.from(new Set(bestProducts.map(p => (p._id ? p._id.toString() : ""))));
+        } catch {
+            return [];
+        }
     });
 };
 
@@ -197,20 +201,14 @@ const getAllProducts = async (req, res) => {
         const query = {};
 
         if (search) {
-            query.$or = [
-                {
-                    title: {
-                        $regex: search,
-                        $options: "i",
-                    },
-                },
-                {
-                    brand: {
-                        $regex: search,
-                        $options: "i",
-                    },
-                },
-            ];
+            const cleanSearch = search.trim();
+            if (cleanSearch) {
+                const escapedSearch = cleanSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                query.$or = [
+                    { title: { $regex: escapedSearch, $options: "i" } },
+                    { brand: { $regex: escapedSearch, $options: "i" } },
+                ];
+            }
         }
 
         if (category) {
@@ -235,7 +233,7 @@ const getAllProducts = async (req, res) => {
         }
 
         const cacheKey = `products_${page}_${limit}_${search}_${category}_${brand}_${sort}`;
-        const result = await withCache(cacheKey, 15, async () => {
+        const result = await withCache(cacheKey, 30, async () => {
             const bestSellingIds = await getBestSellingIds(db);
             const bestSellingIdsSet = new Set(bestSellingIds);
 
@@ -246,21 +244,21 @@ const getAllProducts = async (req, res) => {
 
             if (page && limit) {
                 const skip = (page - 1) * limit;
-                const totalProducts = Object.keys(query).length === 0 
-                    ? await productsCollection.estimatedDocumentCount()
-                    : await productsCollection.countDocuments(query);
+                const countPromise = Object.keys(query).length === 0
+                    ? productsCollection.estimatedDocumentCount()
+                    : productsCollection.countDocuments(query);
 
-                const products = await productsCollection
+                const findPromise = productsCollection
                     .find(query)
-                    .project({ 
-                        description: 0, 
-                        dimensions: 0, 
-                        reviews: 0, 
-                        images: 0, 
-                        sizeMeasurements: 0, 
-                        warrantyInformation: 0, 
-                        shippingInformation: 0, 
-                        returnPolicy: 0, 
+                    .project({
+                        description: 0,
+                        dimensions: 0,
+                        reviews: 0,
+                        images: 0,
+                        sizeMeasurements: 0,
+                        warrantyInformation: 0,
+                        shippingInformation: 0,
+                        returnPolicy: 0,
                         tags: 0,
                         sku: 0,
                         weight: 0,
@@ -272,6 +270,8 @@ const getAllProducts = async (req, res) => {
                     .limit(limit)
                     .toArray();
 
+                const [totalProducts, products] = await Promise.all([countPromise, findPromise]);
+
                 return {
                     totalProducts,
                     currentPage: page,
@@ -281,15 +281,15 @@ const getAllProducts = async (req, res) => {
             } else {
                 const products = await productsCollection
                     .find(query)
-                    .project({ 
-                        description: 0, 
-                        dimensions: 0, 
-                        reviews: 0, 
-                        images: 0, 
-                        sizeMeasurements: 0, 
-                        warrantyInformation: 0, 
-                        shippingInformation: 0, 
-                        returnPolicy: 0, 
+                    .project({
+                        description: 0,
+                        dimensions: 0,
+                        reviews: 0,
+                        images: 0,
+                        sizeMeasurements: 0,
+                        warrantyInformation: 0,
+                        shippingInformation: 0,
+                        returnPolicy: 0,
                         tags: 0,
                         sku: 0,
                         weight: 0,

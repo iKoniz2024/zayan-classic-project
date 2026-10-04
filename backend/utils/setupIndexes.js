@@ -7,10 +7,11 @@ const setupIndexes = async (db) => {
 
         // Indexes for products collection
         // 1. Index for getAllProducts (search, category, brand, sorting)
-        // Indexes for filtering
-        await productsCollection.createIndex({ category: 1 });
-        await productsCollection.createIndex({ brand: 1 });
-        // Indexes for sorting
+        await productsCollection.createIndex({ category: 1, _id: -1 });
+        await productsCollection.createIndex({ category: 1, price: 1 });
+        await productsCollection.createIndex({ category: 1, price: -1 });
+        await productsCollection.createIndex({ brand: 1, _id: -1 });
+        await productsCollection.createIndex({ title: "text", brand: "text" });
         await productsCollection.createIndex({ "meta.createdAt": -1 });
         await productsCollection.createIndex({ price: 1 });
         await productsCollection.createIndex({ price: -1 });

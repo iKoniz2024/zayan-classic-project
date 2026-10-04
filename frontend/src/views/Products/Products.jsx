@@ -50,6 +50,20 @@ export default function Products({ initialCategories, initialProducts }) {
 
   const [sort, setSort] = useState("newest");
   const [showFilters, setShowFilters] = useState(false);
+  const [localSearch, setLocalSearch] = useState(searchQuery);
+
+  useEffect(() => {
+    setLocalSearch(searchQuery);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (localSearch !== searchQuery) {
+        applySearch(localSearch);
+      }
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [localSearch]);
 
   const updateCategory = (slug) => {
     const next = new URLSearchParams(searchParams.toString());
@@ -201,16 +215,27 @@ export default function Products({ initialCategories, initialProducts }) {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  key={searchQuery}
                   placeholder="Search products..."
-                  defaultValue={searchQuery}
+                  value={localSearch}
+                  onChange={(e) => setLocalSearch(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
-                      applySearch(e.target.value);
+                      applySearch(localSearch);
                     }
                   }}
-                  className="pl-9"
+                  className="pl-9 pr-8"
                 />
+                {localSearch && (
+                  <button
+                    onClick={() => {
+                      setLocalSearch("");
+                      applySearch("");
+                    }}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground active:scale-90"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                )}
               </div>
 
               <div className="overflow-visible">
@@ -396,7 +421,7 @@ export default function Products({ initialCategories, initialProducts }) {
                   )}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                <div className={`grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 transition-opacity duration-150 ${isFetching ? "opacity-50" : "opacity-100"}`}>
                   {filteredProducts.map((product, i) => (
                     <ProductCard key={product._id} product={product} index={i} />
                   ))}

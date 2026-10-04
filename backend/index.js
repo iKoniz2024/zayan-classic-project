@@ -3,6 +3,9 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const cookieParser = require("cookie-parser");
 const path = require("path");
+const events = require("events");
+
+events.defaultMaxListeners = 30;
 
 dotenv.config();
 

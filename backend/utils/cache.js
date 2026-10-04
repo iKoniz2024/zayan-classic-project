@@ -18,7 +18,7 @@ const withCache = async (key, ttlSeconds, fetchFunction) => {
 
     // Cache miss or expired, fetch new data
     const data = await fetchFunction();
-    
+
     // Store in cache
     cache.set(key, {
         data,
@@ -93,15 +93,15 @@ const warmUpCache = async (db) => {
         const productsCollection = db.collection("products");
         await withCache("products_null_null____", 15, async () => {
             const products = await productsCollection.find({})
-                .project({ 
-                    description: 0, 
-                    dimensions: 0, 
-                    reviews: 0, 
-                    images: 0, 
-                    sizeMeasurements: 0, 
-                    warrantyInformation: 0, 
-                    shippingInformation: 0, 
-                    returnPolicy: 0, 
+                .project({
+                    description: 0,
+                    dimensions: 0,
+                    reviews: 0,
+                    images: 0,
+                    sizeMeasurements: 0,
+                    warrantyInformation: 0,
+                    shippingInformation: 0,
+                    returnPolicy: 0,
                     tags: 0,
                     sku: 0,
                     weight: 0,

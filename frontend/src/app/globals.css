@@ -86,4 +86,16 @@
     color: var(--foreground);
     font-family: Arial, Helvetica, sans-serif;
   }
+
+  button, a, select, [role="button"], input[type="submit"], input[type="button"] {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button:active:not(:disabled),
+  a:active,
+  [role="button"]:active:not([aria-disabled="true"]) {
+    transform: scale(0.97);
+    transition: transform 0.05s ease-out;
+  }
 }

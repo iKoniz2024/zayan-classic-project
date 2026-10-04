@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Search, ShoppingCart, Sun, Moon, ChevronDown, Menu, X, Phone, Package, House, LayoutGrid, Store, TrendingUp, Zap } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import useCart from "@/hooks/useCart";
@@ -13,6 +13,30 @@ import useSettings from "@/hooks/useSettings";
 import { getLocalCartCount } from "@/utils/localCart";
 import { useAuth } from "@/hooks/useAuth";
 
+function ShopNavLinkInner({ pathname }) {
+    const searchParams = useSearchParams();
+    const isShopActive = pathname === "/products" && !searchParams.toString();
+    return (
+        <Link href="/products" className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold transition-colors border-b-[3px] ${isShopActive ? "border-foreground text-foreground" : "border-transparent text-foreground hover:bg-muted"}`}>
+            <Store className="size-4" />
+            <span className="text-base">Shop Product</span>
+        </Link>
+    );
+}
+
+function ShopNavLink({ pathname }) {
+    return (
+        <Suspense fallback={
+            <Link href="/products" className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold transition-colors border-b-[3px] ${pathname === "/products" ? "border-foreground text-foreground" : "border-transparent text-foreground hover:bg-muted"}`}>
+                <Store className="size-4" />
+                <span className="text-base">Shop Product</span>
+            </Link>
+        }>
+            <ShopNavLinkInner pathname={pathname} />
+        </Suspense>
+    );
+}
+
 const Navbar = () => {
     const { cartCount, refetchCartCount } = useCart();
     const { theme, toggleTheme } = useTheme();
@@ -20,7 +44,6 @@ const Navbar = () => {
     const { user, logout } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
-    const searchParams = useSearchParams();
     const [search, setSearch] = useState("");
     const [mobileOpen, setMobileOpen] = useState(false);
     const [mobileCatOpen, setMobileCatOpen] = useState(false);
@@ -192,7 +215,7 @@ const Navbar = () => {
                             <div className="invisible opacity-0 group-hover/dropdown:visible group-hover/dropdown:opacity-100 transition-all duration-200 fixed left-1/2 -translate-x-1/2 z-200 w-7xl border-b border-border bg-background shadow-xl">
                                 <div className="mx-auto max-w-7xl p-6">
                                     <div className="grid grid-cols-6 gap-6">
-                                        {categories?.slice(0, 18).map((cat) => (
+                                        {mounted && categories?.slice(0, 18).map((cat) => (
                                             <div key={cat._id}>
                                                 <Link
                                                     href={`/products?category=${cat.slug}`}
@@ -220,10 +243,7 @@ const Navbar = () => {
                             </div>
                         </div>
 
-                        <Link href="/products" className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold transition-colors border-b-[3px] ${pathname === "/products" && !searchParams.toString() ? "border-foreground text-foreground" : "border-transparent text-foreground hover:bg-muted"}`}>
-                            <Store className="size-4" />
-                            <span className="text-base">Shop Product</span>
-                        </Link>
+                        <ShopNavLink pathname={pathname} />
 
                         <Link
                             href="/best-selling"
@@ -317,7 +337,7 @@ const Navbar = () => {
                                     </button>
                                     {mobileCatOpen && (
                                         <div className="ml-6 mt-1 space-y-1 border-l-2 border-border pl-4">
-                                            {categories?.map((cat) => (
+                                            {mounted && categories?.map((cat) => (
                                                 <Link
                                                     key={cat._id}
                                                     href={`/products?category=${cat.slug}`}

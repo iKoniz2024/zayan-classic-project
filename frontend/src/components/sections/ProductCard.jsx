@@ -8,6 +8,7 @@ import { Trophy, Flame, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatBDT } from "@/utils/currency";
 import OrderModal from "@/components/ui/OrderModal";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 
 function StockBar({ stock, maxStock }) {
@@ -62,6 +63,7 @@ const badgeConfig = {
 export default function ProductCard({ product, index, badge }) {
   const [showModal, setShowModal] = useState(false);
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const isAdmin = user?.role === "admin";
   const hasDiscount = product.discountPercentage > 0;
   const discountedPrice = hasDiscount
@@ -70,6 +72,12 @@ export default function ProductCard({ product, index, badge }) {
   const isOutOfStock = product.stock === 0;
 
   const effectiveBadge = badge !== undefined ? badge : product.badge;
+
+  const handlePrefetch = () => {
+    if (product?._id) {
+      queryClient.setQueryData(["product", product._id], (old) => old || product);
+    }
+  };
 
   return (
     <>
@@ -83,11 +91,16 @@ export default function ProductCard({ product, index, badge }) {
           visible: (i) => ({
             opacity: 1,
             y: 0,
-            transition: { delay: i * 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+            transition: { delay: Math.min(i * 0.015, 0.08), duration: 0.15, ease: "easeOut" },
           }),
         }}
       >
-        <Link href={`/product/${product._id}`} className="group block h-full">
+        <Link
+          href={`/product/${product._id}`}
+          className="group block h-full"
+          onMouseEnter={handlePrefetch}
+          onTouchStart={handlePrefetch}
+        >
           <div className={`flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${badgeConfig[effectiveBadge]?.ring ?? ""}`}>
             <div className="relative aspect-square overflow-hidden bg-muted">
               <img
@@ -95,6 +108,7 @@ export default function ProductCard({ product, index, badge }) {
                 alt={product.title}
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                 loading="lazy"
+                decoding="async"
               />
 
               {hasDiscount && (
@@ -164,7 +178,7 @@ export default function ProductCard({ product, index, badge }) {
                     e.preventDefault();
                     setShowModal(true);
                   }}
-                  className="w-full rounded-lg bg-foreground py-2.5 text-sm font-medium text-background transition-colors hover:bg-foreground/90 disabled:opacity-50"
+                  className="w-full rounded-lg bg-foreground py-2.5 text-sm font-medium text-background transition-all hover:bg-foreground/90 active:scale-[0.97] disabled:opacity-50 cursor-pointer"
                 >
                   {isOutOfStock ? "Unavailable" : "অর্ডার করুন"}
                 </button>

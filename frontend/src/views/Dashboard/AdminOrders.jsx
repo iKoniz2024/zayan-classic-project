@@ -149,11 +149,10 @@ export default function AdminOrders({ children }) {
       <div className="flex flex-wrap gap-2">
         <button
           onClick={() => setStatusFilter("all")}
-          className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-            statusFilter === "all"
+          className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${statusFilter === "all"
               ? "border-primary bg-primary text-primary-foreground"
               : "border-border bg-card text-muted-foreground hover:bg-muted"
-          }`}
+            }`}
         >
           All ({orders.length})
         </button>
@@ -161,11 +160,10 @@ export default function AdminOrders({ children }) {
           <button
             key={status}
             onClick={() => setStatusFilter(status)}
-            className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-              statusFilter === status
+            className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${statusFilter === status
                 ? "border-primary bg-primary text-primary-foreground"
                 : "border-border bg-card text-muted-foreground hover:bg-muted"
-            }`}
+              }`}
           >
             {formatStatus(status)}
             {statusCounts[status] ? ` (${statusCounts[status]})` : ""}
@@ -244,9 +242,8 @@ export default function AdminOrders({ children }) {
                             orderStatus: e.target.value,
                           })
                         }
-                        className={`appearance-none rounded-full border px-3 py-1 pr-7 text-xs font-medium ${
-                          statusColors[order.orderStatus] || "bg-muted text-foreground"
-                        } cursor-pointer focus:outline-none`}
+                        className={`appearance-none rounded-full border px-3 py-1 pr-7 text-xs font-medium ${statusColors[order.orderStatus] || "bg-muted text-foreground"
+                          } cursor-pointer focus:outline-none`}
                       >
                         {statusOptions.map((s) => (
                           <option key={s} value={s}>

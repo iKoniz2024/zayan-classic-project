@@ -6,17 +6,25 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { formatBDT } from "@/utils/currency";
 import OrderModal from "@/components/ui/OrderModal";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function NewArrivalsProductCard({ product, index }) {
   const [showModal, setShowModal] = useState(false);
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const isAdmin = user?.role === "admin";
   const hasDiscount = product.discountPercentage > 0;
   const discountedPrice = hasDiscount
     ? (product.price * (1 - product.discountPercentage / 100)).toFixed(2)
     : null;
   const isOutOfStock = product.stock === 0;
+
+  const handlePrefetch = () => {
+    if (product?._id) {
+      queryClient.setQueryData(["product", product._id], (old) => old || product);
+    }
+  };
 
   return (
     <>
@@ -30,19 +38,25 @@ export default function NewArrivalsProductCard({ product, index }) {
           visible: (i) => ({
             opacity: 1,
             y: 0,
-            transition: { delay: i * 0.05, duration: 0.4, ease: [0.22, 1, 0.36, 1] },
+            transition: { delay: Math.min(i * 0.015, 0.08), duration: 0.15, ease: "easeOut" },
           }),
         }}
         className="shrink-0 w-37.5 sm:w-45"
       >
         <div className="overflow-hidden rounded-lg border border-border bg-card">
-          <Link href={`/product/${product._id}`} className="block">
+          <Link
+            href={`/product/${product._id}`}
+            className="block"
+            onMouseEnter={handlePrefetch}
+            onTouchStart={handlePrefetch}
+          >
             <div className="relative aspect-3/4 overflow-hidden bg-muted">
               <img
                 src={product.thumbnail || product.images?.[0] || null}
                 alt={product.title}
                 className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
                 loading="lazy"
+                decoding="async"
               />
               {hasDiscount && (
                 <div className="absolute left-0 top-4 z-10 rounded-r bg-foreground px-2 py-1 text-[10px] font-bold text-background">
@@ -77,7 +91,7 @@ export default function NewArrivalsProductCard({ product, index }) {
               <button
                 disabled={isOutOfStock}
                 onClick={() => setShowModal(true)}
-                className="w-full rounded bg-foreground py-1.5 text-[11px] font-medium text-background transition-colors hover:bg-foreground/90 disabled:opacity-50"
+                className="w-full rounded bg-foreground py-1.5 text-[11px] font-medium text-background transition-all hover:bg-foreground/90 active:scale-[0.97] disabled:opacity-50 cursor-pointer"
               >
                 {isOutOfStock ? "Unavailable" : "অর্ডার করুন"}
               </button>

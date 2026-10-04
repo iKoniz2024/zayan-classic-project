@@ -15,6 +15,7 @@ export default function OrderModal({ product, open, onClose }) {
   const [selectedColor, setSelectedColor] = useState(null);
   const [activeDisplayImage, setActiveDisplayImage] = useState(null);
   const [quantity, setQuantity] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (open && product) {
@@ -34,6 +35,7 @@ export default function OrderModal({ product, open, onClose }) {
   const isOutOfStock = product.stock === 0;
 
   const handleAddToCart = async () => {
+    if (isSubmitting) return;
     if (product.sizes?.length > 0 && !selectedSize) {
       toast.error("Please select a size");
       return;
@@ -42,15 +44,20 @@ export default function OrderModal({ product, open, onClose }) {
       toast.error("Please select a color");
       return;
     }
-    await addToCart(
-      product,
-      quantity,
-      selectedSize || "",
-      selectedColor?.name || "",
-      selectedColor?.image || ""
-    );
-    onClose();
-    router.push("/cart");
+    setIsSubmitting(true);
+    try {
+      await addToCart(
+        product,
+        quantity,
+        selectedSize || "",
+        selectedColor?.name || "",
+        selectedColor?.image || ""
+      );
+      onClose();
+      router.push("/cart");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const previewImage = activeDisplayImage || product.thumbnail || product.images?.[0] || null;
@@ -65,7 +72,7 @@ export default function OrderModal({ product, open, onClose }) {
           <h3 className="text-lg font-semibold text-foreground">Choose Options</h3>
           <button
             onClick={onClose}
-            className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:scale-95 cursor-pointer"
           >
             <X className="size-5" />
           </button>
@@ -117,7 +124,7 @@ export default function OrderModal({ product, open, onClose }) {
                             setActiveDisplayImage(colorObj.image);
                           }
                         }}
-                        className={`flex items-center gap-2 rounded-lg border-2 p-1.5 transition-all ${
+                        className={`flex items-center gap-2 rounded-lg border-2 p-1.5 transition-all cursor-pointer active:scale-95 ${
                           isSelected
                             ? "border-foreground bg-muted/40 ring-1 ring-foreground"
                             : "border-border hover:border-foreground/50 bg-background"
@@ -148,7 +155,7 @@ export default function OrderModal({ product, open, onClose }) {
                     <button
                       key={size}
                       onClick={() => setSelectedSize(size)}
-                      className={`rounded-lg border px-4 py-2 text-sm font-medium transition-all ${
+                      className={`rounded-lg border px-4 py-2 text-sm font-medium transition-all cursor-pointer active:scale-95 ${
                         selectedSize === size
                           ? "border-foreground bg-foreground text-background"
                           : "border-border text-foreground hover:border-foreground/50"
@@ -166,7 +173,7 @@ export default function OrderModal({ product, open, onClose }) {
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="flex size-10 items-center justify-center rounded-lg border border-border text-foreground transition-colors hover:bg-muted"
+                  className="flex size-10 items-center justify-center rounded-lg border border-border text-foreground transition-colors hover:bg-muted active:scale-95 cursor-pointer"
                 >
                   <Minus className="size-4" />
                 </button>
@@ -175,7 +182,7 @@ export default function OrderModal({ product, open, onClose }) {
                 </span>
                 <button
                   onClick={() => setQuantity(quantity + 1)}
-                  className="flex size-10 items-center justify-center rounded-lg border border-border text-foreground transition-colors hover:bg-muted"
+                  className="flex size-10 items-center justify-center rounded-lg border border-border text-foreground transition-colors hover:bg-muted active:scale-95 cursor-pointer"
                 >
                   <Plus className="size-4" />
                 </button>
@@ -187,17 +194,17 @@ export default function OrderModal({ product, open, onClose }) {
         <div className="flex items-center justify-between border-t border-border px-6 py-4">
           <button
             onClick={onClose}
-            className="rounded-lg border border-border px-6 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+            className="rounded-lg border border-border px-6 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted active:scale-95 cursor-pointer"
           >
             Close
           </button>
           <button
             onClick={handleAddToCart}
-            disabled={isOutOfStock}
-            className="flex items-center gap-2 rounded-lg bg-foreground px-6 py-2.5 text-sm font-medium text-background transition-colors hover:bg-foreground/90 disabled:opacity-50"
+            disabled={isOutOfStock || isSubmitting}
+            className="flex items-center gap-2 rounded-lg bg-foreground px-6 py-2.5 text-sm font-medium text-background transition-colors hover:bg-foreground/90 disabled:opacity-50 active:scale-95 cursor-pointer"
           >
             <ShoppingCart className="size-4" />
-            Add to cart
+            {isSubmitting ? "Adding..." : "Add to cart"}
           </button>
         </div>
       </div>

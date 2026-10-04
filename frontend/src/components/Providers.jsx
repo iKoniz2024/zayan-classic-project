@@ -10,6 +10,9 @@ import { HelmetProvider } from "react-helmet-async";
 import useSettings from "@/hooks/useSettings";
 import MetaPixel from "@/components/MetaPixel";
 
+import { Suspense } from "react";
+import NavigationProgressBar from "@/components/NavigationProgressBar";
+
 function DynamicFaviconUpdater() {
   useSettings();
   return null;
@@ -19,7 +22,8 @@ export default function Providers({ children }) {
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
       queries: {
-        staleTime: 0,
+        staleTime: 5 * 60 * 1000,
+        gcTime: 10 * 60 * 1000,
         refetchOnWindowFocus: false,
       },
     },
@@ -31,6 +35,9 @@ export default function Providers({ children }) {
         <ThemeProvider>
           <CartProvider>
             <QueryClientProvider client={queryClient}>
+              <Suspense fallback={null}>
+                <NavigationProgressBar />
+              </Suspense>
               <DynamicFaviconUpdater />
               <MetaPixel />
               {children}

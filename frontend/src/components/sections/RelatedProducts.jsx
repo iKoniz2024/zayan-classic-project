@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { ShoppingCart, Trophy, Sparkles, Star, Flame } from "lucide-react";
 import { getProducts, getBestSellingProducts, getNewArrivals } from "@/services/product.api";
@@ -54,6 +54,7 @@ const badgeConfig = {
 function CompactProductCard({ product, index }) {
   const [showModal, setShowModal] = useState(false);
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const isAdmin = user?.role === "admin";
 
   const hasDiscount = product.discountPercentage > 0;
@@ -63,6 +64,12 @@ function CompactProductCard({ product, index }) {
   const isOutOfStock = product.stock === 0;
   const activeBadgeKey = product.badge;
   const activeBadgeInfo = activeBadgeKey ? badgeConfig[activeBadgeKey] : null;
+
+  const handlePrefetch = () => {
+    if (product?._id) {
+      queryClient.setQueryData(["product", product._id], (old) => old || product);
+    }
+  };
 
   return (
     <>
@@ -76,13 +83,18 @@ function CompactProductCard({ product, index }) {
           visible: (i) => ({
             opacity: 1,
             y: 0,
-            transition: { delay: i * 0.05, duration: 0.4, ease: [0.22, 1, 0.36, 1] },
+            transition: { delay: Math.min(i * 0.015, 0.08), duration: 0.15, ease: "easeOut" },
           }),
         }}
       >
         <div className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
           {/* Image & Price Container */}
-          <Link href={`/product/${product._id}`} className="relative block aspect-square w-full overflow-hidden bg-muted">
+          <Link
+            href={`/product/${product._id}`}
+            className="relative block aspect-square w-full overflow-hidden bg-muted"
+            onMouseEnter={handlePrefetch}
+            onTouchStart={handlePrefetch}
+          >
             {/* Badges */}
             {activeBadgeInfo && (
               <div className="absolute left-2 top-2 z-10">
@@ -109,6 +121,7 @@ function CompactProductCard({ product, index }) {
               alt={product.title}
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
               loading="lazy"
+              decoding="async"
             />
 
             {/* Price Pill Overlay */}
@@ -158,17 +171,19 @@ function CompactProductCard({ product, index }) {
 }
 
 export default function RelatedProducts({ currentProduct }) {
-  const category = currentProduct?.category;
+  const categorySlug = typeof currentProduct?.category === "object"
+    ? currentProduct?.category?.slug || currentProduct?.category?.name || ""
+    : currentProduct?.category || "";
   const currentId = currentProduct?._id;
 
   const { data: relatedProducts = [], isLoading } = useQuery({
-    queryKey: ["related-products", category, currentId],
+    queryKey: ["related-products", categorySlug, currentId],
     queryFn: async () => {
       let result = [];
 
-      if (category) {
+      if (categorySlug) {
         // Fetch products in the same category
-        const response = await getProducts({ category, limit: 12 });
+        const response = await getProducts({ category: categorySlug, limit: 12 });
         const prods = response?.products || (Array.isArray(response) ? response : []);
         result = prods.filter((p) => p._id !== currentId);
       }
@@ -213,6 +228,8 @@ export default function RelatedProducts({ currentProduct }) {
 
       return result.slice(0, 12);
     },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
     enabled: !!currentProduct,
   });
 
