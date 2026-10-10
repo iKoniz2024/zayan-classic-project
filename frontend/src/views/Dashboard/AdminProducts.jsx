@@ -301,17 +301,6 @@ export default function AdminProducts({ children }) {
 
   const onSubmit = async (formData) => {
     const activeFields = MEASUREMENT_PRESETS[measurementPreset]?.fields || [];
-    if (selectedSizes.length > 0) {
-      for (const size of selectedSizes) {
-        const m = sizeMeasurements[size];
-        const hasAnyValue = activeFields.some((f) => m?.[f.key]?.toString().trim());
-        if (!hasAnyValue) {
-          toast.error(`Please provide measurements for size ${size}`);
-          return;
-        }
-      }
-    }
-
     let thumbnail = "";
     let images = [];
 
@@ -340,16 +329,18 @@ export default function AdminProducts({ children }) {
       ...formData,
       tags: formData.tags ? formData.tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
       sizes: selectedSizes,
-      sizeMeasurements: (selectedSizes || []).map((s) => {
-        const mData = sizeMeasurements[s] || {};
-        const measurementObj = { size: s };
-        activeFields.forEach((f) => {
-          if (mData[f.key] !== undefined && mData[f.key] !== "") {
-            measurementObj[f.key] = mData[f.key];
-          }
-        });
-        return measurementObj;
-      }),
+      sizeMeasurements: (selectedSizes || [])
+        .map((s) => {
+          const mData = sizeMeasurements[s] || {};
+          const measurementObj = { size: s };
+          activeFields.forEach((f) => {
+            if (mData[f.key] !== undefined && mData[f.key]?.toString().trim() !== "") {
+              measurementObj[f.key] = mData[f.key].toString().trim();
+            }
+          });
+          return measurementObj;
+        })
+        .filter((m) => Object.keys(m).length > 1),
       colors: processedColors,
       thumbnail,
       images,

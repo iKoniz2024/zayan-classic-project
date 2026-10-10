@@ -132,6 +132,8 @@ export default function AdminProductDetails({ children }) {
     queryKey: ["admin-product", id],
     queryFn: () => getProductById(id),
     enabled: !!id,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const { data: categoriesData } = useQuery({
@@ -223,6 +225,9 @@ export default function AdminProductDetails({ children }) {
       });
       queryClient.invalidateQueries({ queryKey: ["admin-product", id] });
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      queryClient.invalidateQueries({ queryKey: ["product", id] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries();
     },
     onError: (err) => {
       const data = err?.response?.data;
@@ -297,17 +302,6 @@ export default function AdminProductDetails({ children }) {
 
   const onSubmit = async (formData) => {
     const activeFields = MEASUREMENT_PRESETS[measurementPreset]?.fields || [];
-    if (selectedSizes.length > 0) {
-      for (const size of selectedSizes) {
-        const m = sizeMeasurements[size];
-        const hasAnyValue = activeFields.some((f) => m?.[f.key]?.toString().trim());
-        if (!hasAnyValue) {
-          toast.error(`Please provide measurements for size ${size}`);
-          return;
-        }
-      }
-    }
-
     let thumbnail = product.thumbnail ?? "";
     let images = product.images ?? [];
 
@@ -338,16 +332,18 @@ export default function AdminProductDetails({ children }) {
       returnPolicy: formData.returnPolicy,
       minimumOrderQuantity: formData.minimumOrderQuantity || undefined,
       sizes: selectedSizes,
-      sizeMeasurements: selectedSizes.map((size) => {
-        const mData = sizeMeasurements[size] || {};
-        const measurementObj = { size };
-        activeFields.forEach((f) => {
-          if (mData[f.key] !== undefined && mData[f.key] !== "") {
-            measurementObj[f.key] = mData[f.key];
-          }
-        });
-        return measurementObj;
-      }),
+      sizeMeasurements: (selectedSizes || [])
+        .map((size) => {
+          const mData = sizeMeasurements[size] || {};
+          const measurementObj = { size };
+          activeFields.forEach((f) => {
+            if (mData[f.key] !== undefined && mData[f.key]?.toString().trim() !== "") {
+              measurementObj[f.key] = mData[f.key].toString().trim();
+            }
+          });
+          return measurementObj;
+        })
+        .filter((m) => Object.keys(m).length > 1),
       colors: processedColors,
       thumbnail,
       tags: formData.tags

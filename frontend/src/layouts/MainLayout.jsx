@@ -15,7 +15,7 @@ export default function MainLayout({ children }) {
           <Navbar />
         </Suspense>
 
-        <main className="flex-1 pb-20 lg:pb-0">
+        <main className="flex-1 pb-28 lg:pb-0">
           {children}
         </main>
 

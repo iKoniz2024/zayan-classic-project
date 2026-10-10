@@ -1,3 +1,9 @@
+const events = require('events');
+events.defaultMaxListeners = 50;
+if (process.setMaxListeners) {
+  process.setMaxListeners(50);
+}
+
 const path = require('path');
 
 // Set the port (cPanel Passenger uses process.env.PORT to assign a dynamic port or socket)

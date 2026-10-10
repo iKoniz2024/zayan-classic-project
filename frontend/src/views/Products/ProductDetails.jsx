@@ -16,6 +16,7 @@ import {
   Home,
   ShoppingCart,
   ChevronDown,
+  Ruler,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { getProductById } from "@/services/product.api";
@@ -69,6 +70,8 @@ export default function ProductDetails({ children }) {
     queryKey: ["product", id],
     queryFn: () => getProductById(id),
     enabled: !!id,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   usePageTitle(product?.title || "Product Details");
@@ -162,6 +165,118 @@ export default function ProductDetails({ children }) {
       </div>
     );
   }
+
+  const renderSizeMeasurementTable = () => {
+    const measurements =
+      product?.sizeMeasurements && product.sizeMeasurements.length > 0
+        ? product.sizeMeasurements
+        : null;
+
+    if (measurements && measurements.length > 0) {
+      const KNOWN_FIELD_ORDER = [
+        "chest",
+        "long",
+        "body",
+        "shoulder",
+        "sleeve",
+        "waist",
+        "hip",
+        "thigh",
+        "ageGroup",
+        "footLength",
+        "euSize",
+      ];
+
+      const columnKeysSet = new Set();
+      measurements.forEach((m) => {
+        Object.keys(m || {}).forEach((k) => {
+          if (k !== "size" && k !== "_id" && m[k] !== undefined && m[k] !== null && m[k] !== "") {
+            columnKeysSet.add(k);
+          }
+        });
+      });
+
+      const columnKeys = Array.from(columnKeysSet).sort((a, b) => {
+        const idxA = KNOWN_FIELD_ORDER.indexOf(a);
+        const idxB = KNOWN_FIELD_ORDER.indexOf(b);
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        return a.localeCompare(b);
+      });
+
+      const FIELD_LABELS = {
+        chest: "Chest (বুক)",
+        long: "Length (দৈর্ঘ্য)",
+        body: "Body (বুক)",
+        shoulder: "Shoulder (কাধ)",
+        sleeve: "Sleeve (হাতা)",
+        waist: "Waist (কোমর)",
+        hip: "Hip (হিপ)",
+        thigh: "Thigh (রান)",
+        ageGroup: "Age (বয়স)",
+        footLength: "Foot Length (পায়ের দৈর্ঘ্য)",
+        euSize: "EU/UK Size",
+      };
+
+      if (columnKeys.length > 0) {
+        return (
+          <div className="mt-4 overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+            <div className="bg-muted py-2.5 text-center text-sm font-bold text-foreground border-b border-border flex items-center justify-center gap-2">
+              <Ruler className="size-4 text-primary" />
+              Size Measurement (Inches)
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/40 text-muted-foreground">
+                    <th className="px-3 py-2 font-semibold text-center">Size</th>
+                    {columnKeys.map((key) => (
+                      <th key={key} className="px-3 py-2 font-semibold text-center whitespace-nowrap">
+                        {FIELD_LABELS[key] || key}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {measurements.map((m, i) => (
+                    <tr key={i} className="hover:bg-muted/20 transition-colors">
+                      <td className="px-3 py-2 font-bold text-foreground text-center bg-muted/10">{m.size}</td>
+                      {columnKeys.map((key) => (
+                        <td key={key} className="px-3 py-2 text-foreground text-center">
+                          {m[key] || "-"}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      }
+    }
+
+    if (product?.sizeChart && !product.sizeChart.includes("placehold.co")) {
+      return (
+        <div className="mt-4 overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+          <div className="bg-muted py-2.5 text-center text-sm font-bold text-foreground border-b border-border flex items-center justify-center gap-2">
+            <Ruler className="size-4 text-primary" />
+            Size Measurement
+          </div>
+          <div className="p-2">
+            <img
+              src={product.sizeChart}
+              alt="Size Measurement"
+              className="w-full h-auto object-contain rounded"
+            />
+          </div>
+        </div>
+      );
+    }
+
+    return null;
+  };
 
   const mainDisplayImage = activeDisplayImage || allImages[selectedImage] || product.thumbnail;
 
@@ -305,9 +420,6 @@ export default function ProductDetails({ children }) {
                   <span className="text-sm font-bold text-foreground">
                     Select Size :
                   </span>
-                  <button className="rounded bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">
-                    Size Chart
-                  </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {product.sizes.map((size) => (
@@ -427,93 +539,7 @@ export default function ProductDetails({ children }) {
             </div>
 
             {/* Dynamic Size Measurement Block */}
-            {(() => {
-              // 1. Check custom sizeMeasurements array set by admin
-              const measurements =
-                product?.sizeMeasurements && product.sizeMeasurements.length > 0
-                  ? product.sizeMeasurements
-                  : null;
-
-              // Render table ONLY if real measurements were provided by admin
-              if (measurements && measurements.length > 0) {
-                const columnKeysSet = new Set();
-                measurements.forEach((m) => {
-                  Object.keys(m || {}).forEach((k) => {
-                    if (k !== "size" && k !== "_id" && m[k]) columnKeysSet.add(k);
-                  });
-                });
-                const columnKeys = Array.from(columnKeysSet);
-
-                const FIELD_LABELS = {
-                  chest: "Chest (বুক)",
-                  long: "Length (দৈর্ঘ্য)",
-                  body: "Body (বুক)",
-                  shoulder: "Shoulder (কাধ)",
-                  sleeve: "Sleeve (হাতা)",
-                  waist: "Waist (কোমর)",
-                  hip: "Hip (হিপ)",
-                  thigh: "Thigh (রান)",
-                  ageGroup: "Age (বয়স)",
-                  footLength: "Foot Length",
-                  euSize: "EU/UK Size",
-                };
-
-                return (
-                  <div className="mt-4 overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-                    <div className="bg-muted py-2.5 text-center text-sm font-bold text-foreground border-b border-border">
-                      Size Measurement (Inches)
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-sm">
-                        <thead>
-                          <tr className="border-b border-border bg-muted/40 text-muted-foreground">
-                            <th className="px-3 py-2 font-semibold text-center">Size</th>
-                            {columnKeys.map((key) => (
-                              <th key={key} className="px-3 py-2 font-semibold text-center">
-                                {FIELD_LABELS[key] || key}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-border">
-                          {measurements.map((m, i) => (
-                            <tr key={i} className="hover:bg-muted/20">
-                              <td className="px-3 py-2 font-bold text-foreground text-center">{m.size}</td>
-                              {columnKeys.map((key) => (
-                                <td key={key} className="px-3 py-2 text-foreground text-center">
-                                  {m[key] || "-"}
-                                </td>
-                              ))}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                );
-              }
-
-              // 2. Render sizeChart image ONLY if valid and provided by admin
-              if (product?.sizeChart && !product.sizeChart.includes("placehold.co")) {
-                return (
-                  <div className="mt-4 overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-                    <div className="bg-muted py-2.5 text-center text-sm font-bold text-foreground border-b border-border">
-                      Size Measurement
-                    </div>
-                    <div className="p-2">
-                      <img
-                        src={product.sizeChart}
-                        alt="Size Measurement"
-                        className="w-full h-auto object-contain"
-                      />
-                    </div>
-                  </div>
-                );
-              }
-
-              // If admin didn't add measurements or size chart, hide section
-              return null;
-            })()}
+            {renderSizeMeasurementTable()}
           </div>
         </div>
 

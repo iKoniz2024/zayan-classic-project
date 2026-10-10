@@ -23,9 +23,14 @@ const bannerRoutes = require("./routes/banner.route");
 const app = express();
 const port = process.env.PORT || 5000;
 
-const clientUrl = process.env.CLIENT_URL ? process.env.CLIENT_URL.replace(/\/$/, "") : "";
+const clientUrl = process.env.CLIENT_URL
+    ? process.env.CLIENT_URL.replace(/\/$/, "")
+    : "";
+
 const allowedOrigins = [
     clientUrl,
+    "https://zayanclassic.com",
+    "https://www.zayanclassic.com",
     "http://localhost:3000",
     "http://localhost:3001",
 ].filter(Boolean);
@@ -34,16 +39,21 @@ app.use(
     cors({
         origin: function (origin, callback) {
             if (!origin) return callback(null, true);
+
             const cleanOrigin = origin.replace(/\/$/, "");
-            if (allowedOrigins.includes(cleanOrigin) || process.env.NODE_ENV !== "production") {
+
+            if (
+                allowedOrigins.includes(cleanOrigin) ||
+                process.env.NODE_ENV !== "production"
+            ) {
                 return callback(null, true);
             }
+
             return callback(new Error("Not allowed by CORS"));
         },
         credentials: true,
     })
 );
-
 app.use(express.json({ limit: "10mb" }));
 app.use(cookieParser());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));

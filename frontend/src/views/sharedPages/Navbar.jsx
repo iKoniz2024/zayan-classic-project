@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 
 import { useState, useEffect, Suspense } from "react";
-import { Search, ShoppingCart, Sun, Moon, ChevronDown, Menu, X, Phone, Package, House, LayoutGrid, Store, TrendingUp, Zap } from "lucide-react";
+import { Search, ShoppingCart, Sun, Moon, ChevronDown, Menu, X, Phone, Package, House, LayoutGrid, Store, TrendingUp, Zap, User } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import useCart from "@/hooks/useCart";
 import useTheme from "@/hooks/useTheme";
@@ -49,6 +49,7 @@ const Navbar = () => {
     const [mobileCatOpen, setMobileCatOpen] = useState(false);
     const [mobileSubCatOpen, setMobileSubCatOpen] = useState({});
     const [mounted, setMounted] = useState(false);
+    const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
     const scrollToSection = (sectionId) => {
         if (pathname === "/") {
@@ -145,52 +146,69 @@ const Navbar = () => {
                         </Link>
 
                         {user ? (
-                            <div className="relative hidden sm:block group/profile">
+                            <div className="relative">
                                 <button
-                                    className="flex size-9 items-center justify-center rounded-full bg-foreground text-sm font-bold text-background transition-opacity hover:opacity-90"
+                                    type="button"
+                                    onClick={() => setProfileDropdownOpen((prev) => !prev)}
+                                    className="flex size-8 sm:size-9 items-center justify-center rounded-full bg-foreground text-xs sm:text-sm font-bold text-background transition-opacity hover:opacity-90 cursor-pointer"
+                                    title={user.name}
                                 >
                                     {user?.name?.charAt(0)?.toUpperCase() || "U"}
                                 </button>
-                                <div className="invisible opacity-0 group-hover/profile:visible group-hover/profile:opacity-100 transition-all duration-200 absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-border bg-background py-2 shadow-xl">
-                                    <div className="px-4 py-2 border-b border-border">
-                                        <p className="text-sm font-semibold text-foreground truncate">{user?.name}</p>
-                                        <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-                                    </div>
-                                    <Link
-                                        href="/dashboard"
-                                        className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
-                                    >
-                                        Dashboard
-                                    </Link>
-                                    <Link
-                                        href="/dashboard/profile"
-                                        className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
-                                    >
-                                        Profile
-                                    </Link>
-                                    <button
-                                        onClick={async () => {
-                                            await logout();
-                                            router.push("/");
-                                        }}
-                                        className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
-                                    >
-                                        Logout
-                                    </button>
-                                </div>
+                                {profileDropdownOpen && (
+                                    <>
+                                        <div
+                                            className="fixed inset-0 z-40"
+                                            onClick={() => setProfileDropdownOpen(false)}
+                                        />
+                                        <div className="absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-border bg-background p-1.5 shadow-xl animate-in fade-in zoom-in-95 duration-150">
+                                            <div className="px-3 py-2 border-b border-border mb-1">
+                                                <p className="text-sm font-semibold text-foreground truncate">{user?.name}</p>
+                                                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                                            </div>
+                                            <Link
+                                                href="/dashboard"
+                                                onClick={() => setProfileDropdownOpen(false)}
+                                                className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                                            >
+                                                Dashboard
+                                            </Link>
+                                            <Link
+                                                href="/dashboard/profile"
+                                                onClick={() => setProfileDropdownOpen(false)}
+                                                className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                                            >
+                                                Profile
+                                            </Link>
+                                            <button
+                                                onClick={async () => {
+                                                    setProfileDropdownOpen(false);
+                                                    await logout();
+                                                    router.push("/");
+                                                }}
+                                                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
+                                            >
+                                                Logout
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         ) : (
                             <Link
                                 href="/login"
-                                className="hidden sm:inline-block rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+                                className="flex size-8 sm:size-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                                title="Login"
                             >
-                                Admin
+                                <User className="size-4.5" />
                             </Link>
                         )}
 
                         <button
+                            type="button"
                             onClick={() => setMobileOpen(true)}
-                            className="flex size-8 sm:size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground border border-border sm:border-none lg:hidden"
+                            className="flex size-8 sm:size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground border border-border sm:border-none lg:hidden cursor-pointer"
+                            title="Open Menu"
                         >
                             <Menu className="size-4.5" />
                         </button>
@@ -296,12 +314,12 @@ const Navbar = () => {
 
             {/* Mobile Sidebar */}
             {mobileOpen && (
-                <div className="fixed inset-0 z-100 lg:hidden">
+                <div className="fixed inset-0 z-[99999] lg:hidden">
                     <div
-                        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                        className="absolute inset-0 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
                         onClick={() => setMobileOpen(false)}
                     />
-                    <div className="absolute inset-y-0 left-0 w-80 max-w-[85vw] bg-background shadow-2xl overflow-y-auto">
+                    <div className="absolute inset-y-0 left-0 w-80 max-w-[85vw] bg-background shadow-2xl overflow-y-auto pb-24 animate-in slide-in-from-left duration-200">
                         <div className="flex items-center justify-between border-b border-border px-5 py-4">
                             <Link href="/" onClick={() => setMobileOpen(false)}>
                                 {mounted && logo && <img src={logo} alt={siteName} className="h-14 w-auto dark:invert" />}
