@@ -70,8 +70,7 @@ export default function ProductDetails({ children }) {
     queryKey: ["product", id],
     queryFn: () => getProductById(id),
     enabled: !!id,
-    staleTime: 0,
-    refetchOnMount: "always",
+    staleTime: 60 * 1000,
   });
 
   usePageTitle(product?.title || "Product Details");
