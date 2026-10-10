@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatBDT } from "@/utils/currency";
 import OrderModal from "@/components/ui/OrderModal";
 import { useQueryClient } from "@tanstack/react-query";
+import { getProductById } from "@/services/product.api";
 import { useAuth } from "@/hooks/useAuth";
 
 function StockBar({ stock, maxStock }) {
@@ -75,7 +76,10 @@ export default function ProductCard({ product, index, badge }) {
 
   const handlePrefetch = () => {
     if (product?._id) {
-      queryClient.setQueryData(["product", product._id], (old) => old || product);
+      queryClient.prefetchQuery({
+        queryKey: ["product", product._id],
+        queryFn: () => getProductById(product._id),
+      });
     }
   };
 

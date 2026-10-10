@@ -75,10 +75,12 @@ export default function ProductDetails({ children }) {
 
   usePageTitle(product?.title || "Product Details");
 
-  // Sync color & display image when product loads
+  // Sync color, size & display image when product loads
   const [prevProductId, setPrevProductId] = useState(null);
   if (product && product._id !== prevProductId) {
     setPrevProductId(product._id);
+    setSelectedSize(null);
+    setQuantity(1);
     if (product.colors?.length > 0) {
       setSelectedColor(product.colors[0]);
       if (product.colors[0].image) {

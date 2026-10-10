@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { ShoppingCart, Trophy, Sparkles, Star, Flame } from "lucide-react";
-import { getProducts, getBestSellingProducts, getNewArrivals } from "@/services/product.api";
+import { getProducts, getBestSellingProducts, getNewArrivals, getProductById } from "@/services/product.api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { formatBDT } from "@/utils/currency";
@@ -67,7 +67,10 @@ function CompactProductCard({ product, index }) {
 
   const handlePrefetch = () => {
     if (product?._id) {
-      queryClient.setQueryData(["product", product._id], (old) => old || product);
+      queryClient.prefetchQuery({
+        queryKey: ["product", product._id],
+        queryFn: () => getProductById(product._id),
+      });
     }
   };
 
