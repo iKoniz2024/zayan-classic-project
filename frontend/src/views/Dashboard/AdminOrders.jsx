@@ -10,6 +10,7 @@ import { Package, Eye, Trash2, ChevronDown, ChevronLeft, ChevronRight } from "lu
 import { getAllOrders, updateOrderStatus, deleteOrder } from "@/services/order.api";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatBDT } from "@/utils/currency";
 import { Helmet } from "react-helmet-async";
 import useSettings from "@/hooks/useSettings";
 
@@ -187,14 +188,14 @@ export default function AdminOrders({ children }) {
           <table className="w-full min-w-[700px] text-left text-sm">
             <thead className="border-b border-border bg-muted/50">
               <tr>
-                <th className="px-4 py-3 font-medium text-muted-foreground">Order ID</th>
+                <th className="px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Order ID</th>
                 <th className="px-4 py-3 font-medium text-muted-foreground">Customer</th>
-                <th className="px-4 py-3 font-medium text-muted-foreground">Items</th>
-                <th className="px-4 py-3 font-medium text-muted-foreground">Total</th>
-                <th className="px-4 py-3 font-medium text-muted-foreground">Payment</th>
-                <th className="px-4 py-3 font-medium text-muted-foreground">Date</th>
-                <th className="px-4 py-3 font-medium text-muted-foreground">Status</th>
-                <th className="px-4 py-3 font-medium text-muted-foreground">Actions</th>
+                <th className="px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Items</th>
+                <th className="px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Total</th>
+                <th className="px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Payment</th>
+                <th className="px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Date</th>
+                <th className="px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Status</th>
+                <th className="w-48 min-w-[190px] px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -206,32 +207,32 @@ export default function AdminOrders({ children }) {
                   transition={{ delay: i * 0.02 }}
                   className="bg-card transition-colors hover:bg-muted/30"
                 >
-                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
                     {order._id?.slice(-8)}
                   </td>
                   <td className="px-4 py-3">
-                    <p className="font-medium text-foreground">
+                    <p className="font-medium text-foreground whitespace-nowrap">
                       {order.shippingAddress?.fullName || "N/A"}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground whitespace-nowrap">
                       {order.shippingAddress?.phone || ""}
                     </p>
                   </td>
-                  <td className="px-4 py-3 text-foreground">
+                  <td className="px-4 py-3 text-foreground whitespace-nowrap">
                     {order.items?.length ?? 0}
                   </td>
-                  <td className="px-4 py-3 font-medium text-foreground">
-                    ৳{(order.totalPrice ?? 0).toLocaleString()}
+                  <td className="px-4 py-3 font-medium text-foreground whitespace-nowrap">
+                    {formatBDT(order.totalPrice ?? 0)}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 whitespace-nowrap">
                     <span className="text-xs text-muted-foreground">
                       {order.paymentMethod}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                  <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                     {formatDate(order.createdAt)}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 whitespace-nowrap">
                     <div className="relative inline-block">
                       <select
                         value={order.orderStatus || "pending"}
@@ -254,8 +255,8 @@ export default function AdminOrders({ children }) {
                       <ChevronDown className="pointer-events-none absolute right-1.5 top-1/2 size-3 -translate-y-1/2 text-current" />
                     </div>
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1">
+                  <td className="w-48 min-w-[190px] px-4 py-3 whitespace-nowrap">
+                    <div className="flex items-center gap-1 min-w-[170px]">
                       <Button asChild variant="ghost" size="sm">
                         <Link href={`/dashboard/orders/${order._id}`}>
                           <Eye className="size-4" />

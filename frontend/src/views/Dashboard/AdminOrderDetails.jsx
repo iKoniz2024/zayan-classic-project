@@ -229,7 +229,7 @@ export default function AdminOrderDetails({ children }) {
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-foreground">{item.title}</p>
                       <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                        <span>Qty: {item.quantity} &times; ৳{item.price?.toLocaleString()}</span>
+                        <span>Qty: {item.quantity} &times; {formatBDT(item.price)}</span>
                         {item.color && (
                           <span className="rounded bg-muted px-1.5 py-0.5 font-medium text-foreground">
                             Color: {item.color}
@@ -243,7 +243,7 @@ export default function AdminOrderDetails({ children }) {
                       </div>
                     </div>
                     <span className="text-sm font-medium text-foreground">
-                      ৳{item.subtotal?.toLocaleString()}
+                      {formatBDT(item.subtotal)}
                     </span>
                   </div>
                 ))}
@@ -262,11 +262,7 @@ export default function AdminOrderDetails({ children }) {
                 {order.shippingCost != null && (
                   <div className="flex justify-between text-muted-foreground">
                     <span>Shipping {order.deliveryArea === "inside_dhaka" ? "(Dhaka)" : order.deliveryArea === "outside_dhaka" ? "(Outside Dhaka)" : ""}</span>
-                    {order.shippingCost > 0 ? (
-                      <span>{formatBDT(order.shippingCost)}</span>
-                    ) : (
-                      <span className="text-foreground font-medium">Free</span>
-                    )}
+                    <span>{formatBDT(order.shippingCost > 0 ? order.shippingCost : (order.deliveryArea === "inside_dhaka" ? 60 : 120))}</span>
                   </div>
                 )}
                 <div className="border-t border-border pt-2">

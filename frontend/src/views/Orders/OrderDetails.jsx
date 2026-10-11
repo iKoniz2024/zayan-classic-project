@@ -376,13 +376,7 @@ export default function OrderDetails({ children }) {
                           ? "(Outside Dhaka)"
                           : ""}
                       </span>
-                      {order.shippingCost > 0 ? (
-                        <span>{formatBDT(order.shippingCost)}</span>
-                      ) : (
-                        <span className="font-medium text-foreground">
-                          Free
-                        </span>
-                      )}
+                      <span>{formatBDT(order.shippingCost > 0 ? order.shippingCost : (order.deliveryArea === "inside_dhaka" ? 60 : 120))}</span>
                     </div>
                   )}
                   <div className="border-t border-border pt-2.5">

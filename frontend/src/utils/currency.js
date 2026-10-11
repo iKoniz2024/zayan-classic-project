@@ -5,5 +5,9 @@ export function convertToBDT(amount) {
 
 export function formatBDT(amount) {
   const numericAmount = convertToBDT(amount);
-  return `৳${Math.round(numericAmount).toLocaleString("en-BD")}`;
+  const hasDecimals = !Number.isInteger(numericAmount);
+  return `৳${numericAmount.toLocaleString("en-BD", {
+    minimumFractionDigits: hasDecimals ? 2 : 0,
+    maximumFractionDigits: 2,
+  })}`;
 }

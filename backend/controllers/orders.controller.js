@@ -86,6 +86,16 @@ const createOrder = async (req, res) => {
                     message: `Only ${product.stock} ${item.title} available in stock`,
                 });
             }
+
+            const disc = Number(product.discountPercentage || 0);
+            const finalPrice = disc > 0
+                ? Number((product.price * (1 - disc / 100)).toFixed(2))
+                : Number(product.price || 0);
+
+            item.price = finalPrice;
+            item.originalPrice = product.price;
+            item.discountPercentage = disc;
+            item.subtotal = Number((item.quantity * finalPrice).toFixed(2));
         }
 
         const totalItems = cart.reduce(
@@ -98,12 +108,10 @@ const createOrder = async (req, res) => {
             0
         );
 
-        const FREE_SHIPPING_THRESHOLD = 1000;
         const SHIPPING_INSIDE_DHAKA = 60;
         const SHIPPING_OUTSIDE_DHAKA = 120;
 
-        const isFreeShipping = totalPrice >= FREE_SHIPPING_THRESHOLD;
-        const shippingCost = isFreeShipping ? 0 : (deliveryArea === "inside_dhaka" ? SHIPPING_INSIDE_DHAKA : SHIPPING_OUTSIDE_DHAKA);
+        const shippingCost = deliveryArea === "inside_dhaka" ? SHIPPING_INSIDE_DHAKA : SHIPPING_OUTSIDE_DHAKA;
         const grandTotal = totalPrice + shippingCost;
 
         const order = {
@@ -200,28 +208,33 @@ const createGuestOrder = async (req, res) => {
                 });
             }
 
+            const disc = Number(product.discountPercentage || 0);
+            const finalPrice = disc > 0
+                ? Number((product.price * (1 - disc / 100)).toFixed(2))
+                : Number(product.price || 0);
+
             cart.push({
                 productId: product._id,
                 title: product.title,
                 thumbnail: item.colorImage || item.thumbnail || product.thumbnail,
-                price: product.price,
+                price: finalPrice,
+                originalPrice: product.price,
+                discountPercentage: disc,
                 quantity: item.quantity,
                 size: item.size || "",
                 color: item.color || "",
                 colorImage: item.colorImage || "",
-                subtotal: item.quantity * product.price,
+                subtotal: Number((item.quantity * finalPrice).toFixed(2)),
             });
         }
 
         const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
         const totalPrice = cart.reduce((sum, item) => sum + item.subtotal, 0);
 
-        const FREE_SHIPPING_THRESHOLD = 1000;
         const SHIPPING_INSIDE_DHAKA = 60;
         const SHIPPING_OUTSIDE_DHAKA = 120;
 
-        const isFreeShipping = totalPrice >= FREE_SHIPPING_THRESHOLD;
-        const shippingCost = isFreeShipping ? 0 : (deliveryArea === "inside_dhaka" ? SHIPPING_INSIDE_DHAKA : SHIPPING_OUTSIDE_DHAKA);
+        const shippingCost = deliveryArea === "inside_dhaka" ? SHIPPING_INSIDE_DHAKA : SHIPPING_OUTSIDE_DHAKA;
         const grandTotal = totalPrice + shippingCost;
 
         const order = {
@@ -837,7 +850,7 @@ const sendInvoiceEmail = async (order, targetEmail = null) => {
                                             <table width="100%" cellpadding="0" cellspacing="0">
                                                 <tr>
                                                     <td style="font-size:13px;color:#888;">Shipping (${shippingLabel})</td>
-                                                    <td align="right" style="font-size:13px;color:${order.shippingCost > 0 ? "#555" : "#22c55e"};font-weight:500;">${order.shippingCost > 0 ? "৳" + Number(order.shippingCost).toFixed(2) : "Free"}</td>
+                                                    <td align="right" style="font-size:13px;color:#555;font-weight:500;">৳${Number(order.shippingCost > 0 ? order.shippingCost : (order.deliveryArea === "inside_dhaka" ? 60 : 120)).toFixed(2)}</td>
                                                 </tr>
                                             </table>
                                         </td>

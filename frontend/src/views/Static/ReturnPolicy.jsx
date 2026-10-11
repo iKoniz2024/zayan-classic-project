@@ -73,7 +73,7 @@ export default function ReturnPolicy({ children }) {
       icon: AlertCircle,
       title: "6. Damaged or Defective Items",
       content:
-        "If you receive a damaged or defective item, please notify us within 48 hours of delivery with photo/video evidence. We will arrange a free replacement or instant full refund.",
+        "If you receive a damaged or defective item, please notify us within 48 hours of delivery with photo/video evidence. We will arrange a replacement or instant full refund.",
     },
   ];
 

@@ -754,7 +754,7 @@ export default function AdminProducts({ children }) {
 
                   <div>
                     <label className="mb-1 block text-sm font-medium text-foreground">Shipping</label>
-                    <Input {...register("shippingInformation")} placeholder="e.g. Free shipping" />
+                    <Input {...register("shippingInformation")} placeholder="e.g. Standard delivery (3-5 days)" />
                   </div>
 
                   <div className="sm:col-span-2">

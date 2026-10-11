@@ -55,7 +55,7 @@ export default function DeliveryRules({ children }) {
       icon: Banknote,
       title: "3. Shipping Rates",
       content:
-        "Shipping cost is flat ৳60 for delivery inside Dhaka city and ৳120 for delivery outside Dhaka. Free shipping offers apply during special store campaigns.",
+        "Shipping cost is flat ৳60 for delivery inside Dhaka city and ৳120 for delivery outside Dhaka.",
     },
     {
       icon: Search,

@@ -309,7 +309,7 @@ function OrderCard({ order, copied, onCopy }) {
                   </div>
                   <div className="flex justify-between text-[11px] text-muted-foreground">
                     <span>Shipping</span>
-                    <span>{order.shippingCost > 0 ? formatBDT(order.shippingCost) : "Free"}</span>
+                    <span>{formatBDT(order.shippingCost > 0 ? order.shippingCost : (order.deliveryArea === "inside_dhaka" ? 60 : 120))}</span>
                   </div>
                   <div className="flex justify-between border-t border-border pt-1 text-xs font-bold text-foreground">
                     <span>Total</span>

@@ -126,6 +126,7 @@ const getCart = async (req, res) => {
                     title: "$product.title",
                     thumbnail: { $ifNull: ["$items.colorImage", "$product.thumbnail"] },
                     price: "$product.price",
+                    discountPercentage: { $ifNull: ["$product.discountPercentage", 0] },
                     stock: "$product.stock",
                     brand: "$product.brand",
                     category: "$product.category",
@@ -133,12 +134,6 @@ const getCart = async (req, res) => {
                     color: "$items.color",
                     colorImage: "$items.colorImage",
                     quantity: "$items.quantity",
-                    subtotal: {
-                        $multiply: [
-                            "$items.quantity",
-                            "$product.price"
-                        ]
-                    }
                 }
             }
         ]).toArray();
@@ -151,12 +146,25 @@ const getCart = async (req, res) => {
             });
         }
 
-        const totalItems = cart.reduce(
+        const processedCart = cart.map((item) => {
+            const disc = Number(item.discountPercentage || 0);
+            const finalPrice = disc > 0
+                ? Number((item.price * (1 - disc / 100)).toFixed(2))
+                : Number(item.price || 0);
+            return {
+                ...item,
+                price: finalPrice,
+                originalPrice: item.price,
+                subtotal: Number((item.quantity * finalPrice).toFixed(2)),
+            };
+        });
+
+        const totalItems = processedCart.reduce(
             (sum, item) => sum + item.quantity,
             0
         );
 
-        const totalPrice = cart.reduce(
+        const totalPrice = processedCart.reduce(
             (sum, item) => sum + item.subtotal,
             0
         );
@@ -164,7 +172,7 @@ const getCart = async (req, res) => {
         res.send({
             totalItems,
             totalPrice,
-            items: cart
+            items: processedCart
         });
 
     } catch (error) {

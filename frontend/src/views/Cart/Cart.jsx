@@ -135,7 +135,6 @@ export default function Cart({ children }) {
 
   const totalItems = items.reduce((sum, item) => sum + (item.quantity ?? 1), 0);
   const totalPrice = items.reduce((sum, item) => sum + (item.price * (item.quantity ?? 1)), 0);
-  const FREE_SHIPPING_THRESHOLD = 1000;
   const SHIPPING_INSIDE_DHAKA = 60;
   const SHIPPING_OUTSIDE_DHAKA = 120;
 
@@ -319,17 +318,11 @@ export default function Cart({ children }) {
                 </div>
                 <div className="flex justify-between text-muted-foreground">
                   <span>Shipping</span>
-                  {totalPrice >= FREE_SHIPPING_THRESHOLD ? (
-                    <span className="text-foreground font-medium">Free</span>
-                  ) : (
-                    <span className="shrink-0">{formatBDT(SHIPPING_INSIDE_DHAKA)} - {formatBDT(SHIPPING_OUTSIDE_DHAKA)}</span>
-                  )}
+                  <span className="shrink-0">{formatBDT(SHIPPING_INSIDE_DHAKA)} - {formatBDT(SHIPPING_OUTSIDE_DHAKA)}</span>
                 </div>
-                {totalPrice < FREE_SHIPPING_THRESHOLD && (
-                  <p className="text-xs text-muted-foreground">
-                    Add {formatBDT(FREE_SHIPPING_THRESHOLD - totalPrice)} more for free shipping. Final cost depends on your location.
-                  </p>
-                )}
+                <p className="text-xs text-muted-foreground">
+                  Final shipping cost depends on your location.
+                </p>
                 <div className="border-t border-border pt-3">
                   <div className="flex justify-between text-base font-bold text-foreground">
                     <span>Total</span>

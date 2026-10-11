@@ -7,9 +7,9 @@ import FeatureCard from "./FeatureCard";
 const FEATURES = [
   {
     icon: Truck,
-    title: "Free Shipping",
+    title: "Fast Delivery",
     description:
-      "Enjoy fast and free shipping on eligible orders with reliable delivery services.",
+      "Reliable and fast delivery services to your doorstep across Bangladesh.",
   },
   {
     icon: ShieldCheck,
@@ -51,7 +51,7 @@ export default function WhyChooseUs({ children }) {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
           {FEATURES.map((feature, i) => (
             <FeatureCard key={feature.title} feature={feature} index={i} />
           ))}

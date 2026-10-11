@@ -23,7 +23,14 @@ import { getLocalCart, clearLocalCart } from "@/utils/localCart";
 const checkoutSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
   phone: z.string().min(11, "Phone must be at least 11 characters"),
-  email: z.string().min(1, "Email address is required").email("Invalid email address"),
+  email: z
+    .string()
+    .trim()
+    .optional()
+    .refine((val) => !val || z.string().email().safeParse(val).success, {
+      message: "Invalid email address",
+    })
+    .default(""),
   address: z.string().min(5, "Address must be at least 5 characters"),
   city: z.string().min(2, "City must be at least 2 characters"),
   deliveryArea: z.enum(["inside_dhaka", "outside_dhaka"], { required_error: "Please select a delivery area" }),
@@ -87,14 +94,12 @@ export default function Checkout({ children }) {
     0
   );
 
-  const FREE_SHIPPING_THRESHOLD = 1000;
   const SHIPPING_INSIDE_DHAKA = 60;
   const SHIPPING_OUTSIDE_DHAKA = 120;
 
   const watchedDeliveryArea = useWatch({ name: "deliveryArea", control });
   const isInsideDhaka = watchedDeliveryArea === "inside_dhaka";
-  const isFreeShipping = totalPrice >= FREE_SHIPPING_THRESHOLD;
-  const shipping = isFreeShipping ? 0 : (isInsideDhaka ? SHIPPING_INSIDE_DHAKA : SHIPPING_OUTSIDE_DHAKA);
+  const shipping = isInsideDhaka ? SHIPPING_INSIDE_DHAKA : SHIPPING_OUTSIDE_DHAKA;
   const total = totalPrice + shipping;
 
   useEffect(() => {
@@ -165,7 +170,7 @@ export default function Checkout({ children }) {
       shippingAddress: {
         fullName: data.fullName,
         phone: data.phone,
-        email: data.email,
+        email: data.email?.trim() || "",
         address: data.address,
         city: data.city,
       },
@@ -258,12 +263,12 @@ export default function Checkout({ children }) {
                   </div>
                   <div className="sm:col-span-2 w-full">
                     <label className="mb-1.5 block text-sm font-medium text-foreground">
-                      Email (for invoice) *
+                      Email (Optional)
                     </label>
                     <Input
                       {...register("email")}
                       type="email"
-                      placeholder="you@example.com"
+                      placeholder="you@example.com (optional)"
                       className={errors.email ? "border-gray-500" : ""}
                     />
                     {errors.email && (
@@ -367,17 +372,8 @@ export default function Checkout({ children }) {
                   </div>
                   <div className="flex justify-between items-center text-muted-foreground">
                     <span>Shipping {isInsideDhaka ? "(Dhaka)" : "(Outside Dhaka)"}</span>
-                    {isFreeShipping ? (
-                      <span className="text-foreground font-medium">Free</span>
-                    ) : (
-                      <span className="shrink-0 text-xs font-medium text-foreground">{formatBDT(shipping)}</span>
-                    )}
+                    <span className="shrink-0 text-xs font-medium text-foreground">{formatBDT(shipping)}</span>
                   </div>
-                  {!isFreeShipping && (
-                    <p className="text-xs text-muted-foreground">
-                      Add {formatBDT(FREE_SHIPPING_THRESHOLD - totalPrice)} more for free shipping
-                    </p>
-                  )}
                   <div className="border-t border-border pt-3">
                     <div className="flex items-baseline justify-between text-base font-bold text-foreground">
                       <span>Total</span>

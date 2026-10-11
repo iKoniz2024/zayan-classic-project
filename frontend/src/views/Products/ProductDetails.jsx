@@ -553,7 +553,9 @@ export default function ProductDetails({ children }) {
                 Fast Shipping
               </p>
               <p className="text-xs text-muted-foreground">
-                {product.shippingInformation || "Receive products in amazing time"}
+                {product.shippingInformation && !/free/i.test(product.shippingInformation)
+                  ? product.shippingInformation
+                  : "Standard delivery: ৳60 Inside Dhaka / ৳120 Outside Dhaka"}
               </p>
             </div>
           </div>

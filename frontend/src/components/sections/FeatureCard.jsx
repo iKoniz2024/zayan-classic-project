@@ -20,16 +20,16 @@ export default function FeatureCard({ feature, index }) {
         }),
       }}
     >
-      <div className="group flex h-full flex-col items-center gap-4 rounded-xl border border-border bg-card p-6 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg sm:p-8">
-        <div className="flex size-14 items-center justify-center rounded-2xl bg-muted transition-transform duration-300 group-hover:scale-110">
-          <Icon className="size-7 text-foreground" strokeWidth={1.5} />
+      <div className="group flex h-full flex-col items-center justify-center gap-3 rounded-xl border border-border bg-card p-4 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg sm:gap-4 sm:p-8">
+        <div className="flex size-11 items-center justify-center rounded-xl bg-muted transition-transform duration-300 group-hover:scale-110 sm:size-14 sm:rounded-2xl">
+          <Icon className="size-5 text-foreground sm:size-7" strokeWidth={1.5} />
         </div>
 
         <div>
-          <h3 className="text-base font-semibold text-foreground sm:text-lg">
+          <h3 className="text-sm font-semibold text-foreground sm:text-lg">
             {feature.title}
           </h3>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+          <p className="hidden mt-2 text-sm leading-relaxed text-muted-foreground sm:block">
             {feature.description}
           </p>
         </div>

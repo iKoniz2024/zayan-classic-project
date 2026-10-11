@@ -48,9 +48,9 @@ export default function Footer() {
   return (
     <footer className="border-t border-border bg-card text-card-foreground">
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-8 sm:gap-8 lg:grid-cols-4">
           {/* Logo & Description */}
-          <div className="space-y-4">
+          <div className="col-span-2 space-y-4 sm:col-span-1">
             <Link href="/" className="inline-block">
               <img src={logo} alt={siteName} className="h-20 sm:h-36 w-auto dark:invert" />
             </Link>
@@ -60,7 +60,7 @@ export default function Footer() {
           </div>
 
           {/* Quick Links */}
-          <div>
+          <div className="col-span-1">
             <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-foreground">
               Quick Links
             </h3>
@@ -79,7 +79,7 @@ export default function Footer() {
           </div>
 
           {/* Services & Help */}
-          <div>
+          <div className="col-span-1">
             <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-foreground">
               Services & Help
             </h3>
@@ -98,7 +98,7 @@ export default function Footer() {
           </div>
 
           {/* Social Icons & Contact Info Column */}
-          <div className="space-y-4 pt-1">
+          <div className="col-span-2 space-y-4 pt-1 sm:col-span-1">
             <div className="flex flex-wrap gap-3">
               {socialLinks.map((social) => {
                 const Icon = social.icon;
