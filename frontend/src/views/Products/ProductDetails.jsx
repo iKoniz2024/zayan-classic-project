@@ -15,6 +15,7 @@ import {
   ChevronRight,
   Home,
   ShoppingCart,
+  Store,
   ChevronDown,
   Ruler,
 } from "lucide-react";
@@ -128,19 +129,26 @@ export default function ProductDetails({ children }) {
     ? (product.price * (1 - product.discountPercentage / 100)).toFixed(2)
     : null;
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [isOrdering, setIsOrdering] = useState(false);
 
-  const handleAddToCart = async () => {
-    if (isSubmitting) return;
+  const validateSelection = () => {
     if (product?.sizes?.length > 0 && !selectedSize) {
       toast.error("Please select a size");
-      return;
+      return false;
     }
     if (product?.colors?.length > 0 && !selectedColor) {
       toast.error("Please select a color");
-      return;
+      return false;
     }
-    setIsSubmitting(true);
+    return true;
+  };
+
+  const handleAddToCart = async () => {
+    if (isAddingToCart || isOrdering) return;
+    if (!validateSelection()) return;
+
+    setIsAddingToCart(true);
     try {
       await addToCart(
         product,
@@ -150,7 +158,26 @@ export default function ProductDetails({ children }) {
         selectedColor?.image || ""
       );
     } finally {
-      setIsSubmitting(false);
+      setIsAddingToCart(false);
+    }
+  };
+
+  const handleBuyNow = async () => {
+    if (isAddingToCart || isOrdering) return;
+    if (!validateSelection()) return;
+
+    setIsOrdering(true);
+    try {
+      await addToCart(
+        product,
+        quantity,
+        selectedSize || "",
+        selectedColor?.name || "",
+        selectedColor?.image || ""
+      );
+      router.push("/cart");
+    } finally {
+      setIsOrdering(false);
     }
   };
 
@@ -439,16 +466,17 @@ export default function ProductDetails({ children }) {
               </div>
             )}
 
-            {/* Quantity and Order */}
-            <div className="space-y-2">
-              <span className="text-sm font-bold text-foreground">
-                Select Quantity :
-              </span>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center rounded border border-border">
+            {/* Quantity and Actions */}
+            <div className="space-y-3">
+              <div>
+                <span className="text-sm font-bold text-foreground">
+                  Select Quantity :
+                </span>
+                <div className="mt-1.5 flex items-center rounded border border-border w-fit">
                   <button
+                    type="button"
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="flex size-10 items-center justify-center text-foreground transition-colors hover:bg-muted"
+                    className="flex size-10 items-center justify-center text-foreground transition-colors hover:bg-muted cursor-pointer"
                   >
                     <Minus className="size-4" />
                   </button>
@@ -456,33 +484,50 @@ export default function ProductDetails({ children }) {
                     {quantity}
                   </span>
                   <button
+                    type="button"
                     onClick={() => setQuantity(quantity + 1)}
-                    className="flex size-10 items-center justify-center text-foreground transition-colors hover:bg-muted"
+                    className="flex size-10 items-center justify-center text-foreground transition-colors hover:bg-muted cursor-pointer"
                   >
                     <Plus className="size-4" />
                   </button>
                 </div>
+              </div>
 
-                {!isAdmin && (
+              {!isAdmin && (
+                <div className="grid grid-cols-2 gap-3 pt-1">
                   <Button
+                    type="button"
+                    variant="outline"
                     size="lg"
-                    className="flex-1 rounded bg-primary text-primary-foreground hover:bg-primary/90 text-base font-bold active:scale-[0.97] cursor-pointer"
-                    disabled={product.stock === 0 || isSubmitting}
+                    className="h-11 rounded border-2 border-foreground/20 text-foreground hover:bg-foreground hover:text-background text-sm sm:text-base font-bold active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={product.stock === 0 || isAddingToCart || isOrdering}
                     onClick={handleAddToCart}
                   >
-                    {isSubmitting ? "যোগ করা হচ্ছে..." : "অর্ডার করুন"}
+                    <ShoppingCart className="size-4" />
+                    {product.stock === 0 ? "Out of Stock" : isAddingToCart ? "Adding..." : "Add to Cart"}
                   </Button>
-                )}
-              </div>
+
+                  <Button
+                    type="button"
+                    size="lg"
+                    className="h-11 rounded bg-primary text-primary-foreground hover:bg-primary/90 text-sm sm:text-base font-bold active:scale-[0.97] cursor-pointer flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={product.stock === 0 || isAddingToCart || isOrdering}
+                    onClick={handleBuyNow}
+                  >
+                    {product.stock === 0 ? "Unavailable" : isOrdering ? "অপেক্ষা করুন..." : "অর্ডার করুন"}
+                  </Button>
+                </div>
+              )}
             </div>
 
             {/* Find in Store */}
-            <div className="pt-2">
+            <div className="pt-1">
               <button
-                className="w-full flex items-center justify-center gap-2 rounded bg-muted/30 border border-border py-2 text-sm font-medium hover:bg-muted/50"
+                type="button"
+                className="w-full flex items-center justify-center gap-2 rounded bg-muted/30 border border-border py-2.5 text-sm font-medium hover:bg-muted/50 cursor-pointer transition-colors"
                 onClick={() => toast("Find in Store feature coming soon!")}
               >
-                Find in Store <ShoppingCart className="size-4" />
+                Find in Store <Store className="size-4" />
               </button>
             </div>
 

@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 async function fetchBestSelling() {
   try {
     const baseUrl = getApiUrl();
-    const res = await fetch(`${baseUrl}/products/best-sellers`, { next: { revalidate: 10 } });
+    const res = await fetch(`${baseUrl}/products/best-sellers`, { cache: "no-store" });
     return res.ok ? await res.json() : { products: [] };
   } catch (err) {
     console.error("Failed to fetch best-selling products:", err.message);

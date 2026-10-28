@@ -5,7 +5,7 @@ export const metadata = {
   title: "Home",
 };
 
-export const revalidate = 300;
+export const dynamic = 'force-dynamic';
 
 async function fetchHomeData() {
   const baseUrl = getApiUrl();
@@ -19,9 +19,9 @@ async function fetchHomeData() {
       bannersRes
     ] = await Promise.all([
       fetch(`${baseUrl}/categories`, { next: { revalidate: 300 } }),
-      fetch(`${baseUrl}/products/new-arrivals`, { next: { revalidate: 300 } }),
-      fetch(`${baseUrl}/products/best-sellers`, { next: { revalidate: 300 } }),
-      fetch(`${baseUrl}/products/flash-sale`, { next: { revalidate: 300 } }),
+      fetch(`${baseUrl}/products/new-arrivals`, { cache: "no-store" }),
+      fetch(`${baseUrl}/products/best-sellers`, { cache: "no-store" }),
+      fetch(`${baseUrl}/products/flash-sale`, { cache: "no-store" }),
       fetch(`${baseUrl}/banners`, { next: { revalidate: 300 } }),
     ]);
 
