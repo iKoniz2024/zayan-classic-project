@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm, useWatch } from "react-hook-form";
@@ -18,7 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatBDT } from "@/utils/currency";
 import { Helmet } from "react-helmet-async";
 import useSettings from "@/hooks/useSettings";
-import { getLocalCart, clearLocalCart } from "@/utils/localCart";
+import { getLocalCart, clearLocalCart, getDirectOrder, clearDirectOrder } from "@/utils/localCart";
 
 const checkoutSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
@@ -77,13 +77,27 @@ export default function Checkout({ children }) {
     },
   });
 
+  const searchParams = useSearchParams();
+  const isDirectParam = searchParams?.get("direct") === "1" || searchParams?.get("direct") === "true";
+
   const { data: cart, isLoading } = useQuery({
-    queryKey: ["localCart"],
+    queryKey: ["checkoutCart", isDirectParam],
     queryFn: () => {
+      if (isDirectParam) {
+        const directItem = getDirectOrder();
+        if (directItem) {
+          return {
+            items: [directItem],
+            totalItems: directItem.quantity,
+            totalPrice: directItem.price * directItem.quantity,
+            isDirect: true,
+          };
+        }
+      }
       const items = getLocalCart();
       const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
       const totalPrice = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-      return { items, totalItems, totalPrice };
+      return { items, totalItems, totalPrice, isDirect: false };
     },
   });
 
@@ -132,8 +146,12 @@ export default function Checkout({ children }) {
         num_items: Number(totalItems || 1),
       });
 
-      clearLocalCart();
-      refetchCartCount(0);
+      if (cart?.isDirect) {
+        clearDirectOrder();
+      } else {
+        clearLocalCart();
+        refetchCartCount(0);
+      }
       if (data?.insertedId) {
         sendOrderInvoice(data.insertedId).catch(() => { });
       }
@@ -216,9 +234,21 @@ export default function Checkout({ children }) {
           >
             Checkout
           </motion.h1>
-          <Button variant="ghost" size="sm" className="w-fit" onClick={() => router.push("/cart")}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-fit"
+            onClick={() => {
+              if (cart?.isDirect) {
+                clearDirectOrder();
+                router.back();
+              } else {
+                router.push("/cart");
+              }
+            }}
+          >
             <ArrowLeft className="size-4" data-icon="inline-start" />
-            Back to Cart
+            {cart?.isDirect ? "Back" : "Back to Cart"}
           </Button>
         </div>
 

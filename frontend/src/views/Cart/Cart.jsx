@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatBDT } from "@/utils/currency";
 import { Helmet } from "react-helmet-async";
 import useSettings from "@/hooks/useSettings";
-import { getLocalCart, updateLocalCartItem, removeFromLocalCart, getLocalCartCount } from "@/utils/localCart";
+import { getLocalCart, updateLocalCartItem, removeFromLocalCart, getLocalCartCount, clearDirectOrder } from "@/utils/localCart";
 
 function CartSkeleton() {
   return (
@@ -334,7 +334,7 @@ export default function Cart({ children }) {
                 className="mt-6 w-full rounded-lg"
                 size="lg"
                 disabled={hasStockIssues}
-                onClick={() => router.push("/checkout")}
+                onClick={() => { clearDirectOrder(); router.push("/checkout"); }}
               >
                 {hasStockIssues ? "Fix Stock Issues" : "Proceed to Checkout"}
               </Button>

@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { getProductById } from "@/services/product.api";
+import { setDirectOrder } from "@/utils/localCart";
 import { useAddToCart } from "@/hooks/useAddToCart";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/badge";
@@ -162,20 +163,33 @@ export default function ProductDetails({ children }) {
     }
   };
 
-  const handleBuyNow = async () => {
+  const handleBuyNow = () => {
     if (isAddingToCart || isOrdering) return;
     if (!validateSelection()) return;
 
     setIsOrdering(true);
     try {
-      await addToCart(
-        product,
+      const finalPrice = product.discountPercentage > 0
+        ? Number((product.price * (1 - product.discountPercentage / 100)).toFixed(2))
+        : Number(product.price || 0);
+
+      const orderItem = {
+        productId: product._id,
+        title: product.title,
+        thumbnail: selectedColor?.image || product.thumbnail || product.images?.[0] || null,
+        colorImage: selectedColor?.image || null,
+        price: finalPrice,
+        stock: product.stock ?? 0,
+        category: typeof product.category === "string"
+          ? product.category
+          : product.category?.name || product.category?.slug || "",
         quantity,
-        selectedSize || "",
-        selectedColor?.name || "",
-        selectedColor?.image || ""
-      );
-      router.push("/cart");
+        size: selectedSize || "",
+        color: selectedColor?.name || "",
+      };
+
+      setDirectOrder(orderItem);
+      router.push("/checkout?direct=1");
     } finally {
       setIsOrdering(false);
     }

@@ -65,9 +65,9 @@ export function removeFromLocalCart(productId, size = "", color = "") {
   const cart = getLocalCart().filter(
     (c) =>
       !(
-        c.productId === productId &&
-        (c.size || "") === (size || "") &&
-        (c.color || "") === (color || "")
+        (c.productId === productId || c._id === productId) &&
+        (size === undefined || size === null ? true : (c.size || "") === (size || "")) &&
+        (color === undefined || color === null ? true : (c.color || "") === (color || ""))
       )
   );
   setLocalCart(cart);
@@ -80,4 +80,43 @@ export function getLocalCartCount() {
 
 export function clearLocalCart() {
   localStorage.removeItem(CART_KEY);
+}
+
+const DIRECT_ORDER_KEY = "infinity_store_direct_order";
+
+export function setDirectOrder(item) {
+  try {
+    if (typeof sessionStorage !== "undefined") {
+      sessionStorage.setItem(DIRECT_ORDER_KEY, JSON.stringify(item));
+    }
+  } catch {}
+  try {
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem(DIRECT_ORDER_KEY, JSON.stringify(item));
+    }
+  } catch {}
+}
+
+export function getDirectOrder() {
+  try {
+    const raw = (typeof sessionStorage !== "undefined" && sessionStorage.getItem(DIRECT_ORDER_KEY)) ||
+      (typeof localStorage !== "undefined" && localStorage.getItem(DIRECT_ORDER_KEY));
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+export function clearDirectOrder() {
+  try {
+    if (typeof sessionStorage !== "undefined") {
+      sessionStorage.removeItem(DIRECT_ORDER_KEY);
+    }
+  } catch {}
+  try {
+    if (typeof localStorage !== "undefined") {
+      localStorage.removeItem(DIRECT_ORDER_KEY);
+    }
+  } catch {}
 }

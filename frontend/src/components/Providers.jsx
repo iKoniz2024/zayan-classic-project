@@ -44,12 +44,16 @@ export default function Providers({ children }) {
               {children}
               <Toaster
                 position="top-right"
+                containerStyle={{
+                  zIndex: 99999999,
+                }}
                 toastOptions={{
                   duration: 3000,
                   style: {
                     borderRadius: "10px",
                     background: "#1a1a1a",
                     color: "#fff",
+                    zIndex: 99999999,
                   },
                   success: {
                     iconTheme: {

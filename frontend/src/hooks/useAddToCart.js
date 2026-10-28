@@ -11,7 +11,14 @@ export function useAddToCart() {
   const { refetchCartCount } = useCart();
   const queryClient = useQueryClient();
 
-  const addToCart = async (product, quantity = 1, size = "", color = "", colorImage = "") => {
+  const addToCart = async (
+    product,
+    quantity = 1,
+    size = "",
+    color = "",
+    colorImage = "",
+    options = { openDrawer: true }
+  ) => {
     try {
       const finalPrice = product.discountPercentage > 0
         ? Number((product.price * (1 - product.discountPercentage / 100)).toFixed(2))
@@ -34,7 +41,9 @@ export function useAddToCart() {
       toast.success("Added to cart");
       refetchCartCount(getLocalCartCount());
       queryClient.invalidateQueries({ queryKey: ["localCart"] });
-      window.dispatchEvent(new Event("cart-updated"));
+      if (options?.openDrawer !== false) {
+        window.dispatchEvent(new Event("cart-updated"));
+      }
 
       // Track Meta Pixel AddToCart event
       trackMetaPixelEvent("AddToCart", {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ShoppingCart, X, Trash2 } from "lucide-react";
@@ -11,7 +11,7 @@ import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
 import useCart from "@/hooks/useCart";
 import { formatBDT } from "@/utils/currency";
-import { getLocalCart, removeFromLocalCart, getLocalCartCount } from "@/utils/localCart";
+import { getLocalCart, removeFromLocalCart, getLocalCartCount, clearDirectOrder } from "@/utils/localCart";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function StickyCartDrawer() {
@@ -21,6 +21,11 @@ export default function StickyCartDrawer() {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
   const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
 
   const { data: cart, isFetching, refetch } = useQuery({
     queryKey: ["localCart"],
@@ -59,11 +64,11 @@ export default function StickyCartDrawer() {
   );
 
   const removeMutation = useMutation({
-    mutationFn: ({ productId, size }) => {
-      removeFromLocalCart(productId, size);
+    mutationFn: ({ productId, size, color }) => {
+      removeFromLocalCart(productId, size, color);
       return Promise.resolve();
     },
-    onMutate: async ({ productId, size }) => {
+    onMutate: async ({ productId, size, color }) => {
       await queryClient.cancelQueries({ queryKey: ["localCart"] });
       const previousCart = queryClient.getQueryData(["localCart"]);
       queryClient.setQueryData(["localCart"], (old) => {
@@ -71,7 +76,12 @@ export default function StickyCartDrawer() {
         return {
           ...old,
           items: old.items.filter(
-            (item) => !(item.productId === productId && (item.size || "") === (size || ""))
+            (item) =>
+              !(
+                (item.productId === productId || item._id === productId) &&
+                (item.size || "") === (size || "") &&
+                (item.color || "") === (color || "")
+              )
           ),
         };
       });
@@ -144,8 +154,8 @@ export default function StickyCartDrawer() {
             </div>
           ) : (
             <div className="space-y-4">
-              {items.map((item) => (
-                <div key={item.productId} className="flex items-start gap-3 rounded-3xl border border-border bg-card p-3">
+              {items.map((item, idx) => (
+                <div key={`${item.productId || item._id}-${item.size || ""}-${item.color || ""}-${idx}`} className="flex items-start gap-3 rounded-3xl border border-border bg-card p-3">
                   {item.thumbnail ? (
                     <img src={item.thumbnail} alt={item.title || "Product"} className="h-16 w-16 rounded-lg object-cover" />
                   ) : (
@@ -166,8 +176,14 @@ export default function StickyCartDrawer() {
                   </div>
                   <button
                     type="button"
-                    className="rounded-lg p-2 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
-                    onClick={() => removeMutation.mutate({ productId: item.productId, size: item.size || "" })}
+                    className="rounded-lg p-2 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive cursor-pointer"
+                    onClick={() =>
+                      removeMutation.mutate({
+                        productId: item.productId || item._id,
+                        size: item.size || "",
+                        color: item.color || "",
+                      })
+                    }
                     aria-label={`Remove ${item.title || "item"} from cart`}
                   >
                     <Trash2 className="size-4" />
@@ -187,6 +203,7 @@ export default function StickyCartDrawer() {
             type="button"
             className="inline-flex w-full items-center justify-center rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
             onClick={() => {
+              clearDirectOrder();
               setOpen(false);
               router.push("/checkout");
             }}
