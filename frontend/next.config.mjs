@@ -1,13 +1,3 @@
-// /** @type {import('next').NextConfig} */
-// const nextConfig = {
-//   reactStrictMode: true,
-//   output: 'standalone',
-// };
-
-// export default nextConfig;
-
-
-
 import { EventEmitter } from 'events';
 EventEmitter.defaultMaxListeners = 50;
 if (typeof process !== 'undefined' && process.setMaxListeners) {
@@ -21,7 +11,7 @@ const isVercel = process.env.VERCEL === '1' || Boolean(process.env.VERCEL);
 const nextConfig = {
   allowedDevOrigins: ['localhost', '127.0.0.1'],
   reactStrictMode: true,
-  ...(process.env.STANDALONE === 'true' ? { output: 'standalone' } : {}),
+  ...(isVercel ? {} : { output: 'standalone' }),
   async redirects() {
     return [
       {
