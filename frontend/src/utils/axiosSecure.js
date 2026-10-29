@@ -9,11 +9,16 @@ const axiosSecure = axios.create({
   },
 });
 
+axiosSecure.interceptors.request.use((config) => {
+  config.baseURL = getApiUrl();
+  return config;
+});
+
 axiosSecure.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    
+
     // If the error is 401 (Unauthorized), we haven't retried yet, and we are not already trying to refresh
     if (
       error.response &&

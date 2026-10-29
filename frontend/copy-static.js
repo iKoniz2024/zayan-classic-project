@@ -37,12 +37,12 @@ try {
   const standalonePath = path.join(__dirname, '.next', 'standalone');
   if (fs.existsSync(standalonePath)) {
     console.log('Searching for server.js location in standalone build...');
-    
+
     // Copy to root standalone directory
     copyDir(path.join(__dirname, 'public'), path.join(standalonePath, 'public'));
     copyDir(path.join(__dirname, '.next', 'static'), path.join(standalonePath, '.next', 'static'));
 
-    // Find subdirectories containing server.js (e.g. .next/standalone/fashion-house-next)
+    // Find subdirectories containing server.js (e.g. .next/standalone/frontend)
     const serverDirs = findServerJsDirs(standalonePath);
     serverDirs.forEach((serverDir) => {
       if (serverDir !== standalonePath) {
@@ -51,6 +51,17 @@ try {
         copyDir(path.join(__dirname, '.next', 'static'), path.join(serverDir, '.next', 'static'));
       }
     });
+
+    // Ensure root server.js exists if Next.js nested it inside a subdirectory
+    const rootServer = path.join(standalonePath, 'server.js');
+    if (!fs.existsSync(rootServer)) {
+      if (serverDirs.length > 0) {
+        const targetServer = path.join(serverDirs[0], 'server.js');
+        const rel = path.relative(standalonePath, targetServer).replace(/\\/g, '/');
+        console.log(`Creating wrapper server.js at ${rootServer} pointing to ./${rel}`);
+        fs.writeFileSync(rootServer, `require('./${rel}');\n`);
+      }
+    }
 
     console.log('Static assets copied successfully to all target standalone locations!');
   } else {

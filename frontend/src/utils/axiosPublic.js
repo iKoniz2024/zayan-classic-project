@@ -9,4 +9,9 @@ const axiosPublic = axios.create({
   },
 });
 
+axiosPublic.interceptors.request.use((config) => {
+  config.baseURL = getApiUrl();
+  return config;
+});
+
 export default axiosPublic;
