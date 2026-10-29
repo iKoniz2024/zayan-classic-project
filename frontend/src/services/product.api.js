@@ -11,6 +11,17 @@ export const getProductById = async (id) => {
   return data;
 };
 
+export const getRelatedProducts = async (id, category = "") => {
+  try {
+    const params = category ? { category, limit: 12 } : { limit: 12 };
+    const res = await getProducts(params);
+    const prods = res?.products || (Array.isArray(res) ? res : []);
+    return prods.filter((p) => String(p._id) !== String(id)).slice(0, 12);
+  } catch {
+    return [];
+  }
+};
+
 export const getFlashSaleProducts = async () => {
   const { data } = await axiosPublic.get("/products/flash-sale");
   return data;

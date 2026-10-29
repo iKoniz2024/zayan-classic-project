@@ -7,8 +7,9 @@ if (process.setMaxListeners) {
 const fs = require('fs');
 const path = require('path');
 
-// Set the port
+// Set the port and hostname
 process.env.PORT = process.env.PORT || 3000;
+process.env.HOSTNAME = process.env.BIND_HOST || "127.0.0.1";
 
 // Boot the standalone server compiled by Next.js
 const standaloneServer = path.join(__dirname, '.next', 'standalone', 'server.js');

@@ -197,6 +197,11 @@ const getBestSellingProductsInternal = async (db) => {
 
     return products.map(product => ({
         ...product,
+        colors: (product.colors || []).map(c => ({
+            name: c.name,
+            hex: c.hex,
+            image: c.image && c.image !== product.thumbnail ? c.image : undefined
+        })),
         badge: "best-seller"
     }));
 };
@@ -218,8 +223,8 @@ const getAllProducts = async (req, res) => {
         const db = getDB();
         const productsCollection = db.collection("products");
 
-        const page = req.query.page ? parseInt(req.query.page) : null;
         const limit = req.query.limit ? parseInt(req.query.limit) : null;
+        const page = req.query.page ? parseInt(req.query.page) : (limit ? 1 : null);
 
         const search = req.query.search || "";
         const category = req.query.category || "";
@@ -260,18 +265,60 @@ const getAllProducts = async (req, res) => {
             sortOption = { price: -1 };
         }
 
+        // Fast path for category-based queries (e.g. Related Products)
+        if (category && limit && !search && !brand) {
+            const catCacheKey = `cat_prods_${category}_${limit}_${sort}`;
+            const catResult = await withCache(catCacheKey, 300, async () => {
+                const prods = await productsCollection
+                    .find({ category })
+                    .project({
+                        title: 1,
+                        price: 1,
+                        discountPercentage: 1,
+                        stock: 1,
+                        thumbnail: 1,
+                        colors: 1,
+                        category: 1,
+                        badge: 1
+                    })
+                    .sort(sortOption)
+                    .limit(limit)
+                    .toArray();
+
+                return {
+                    totalProducts: prods.length,
+                    products: prods.map(p => ({
+                        ...p,
+                        colors: (p.colors || []).map(c => ({
+                            name: c.name,
+                            hex: c.hex,
+                            image: c.image && c.image !== p.thumbnail ? c.image : undefined
+                        }))
+                    }))
+                };
+            });
+
+            return res.send(catResult);
+        }
+
         const cacheKey = `products_${page}_${limit}_${search}_${category}_${brand}_${sort}`;
-        const result = await withCache(cacheKey, 30, async () => {
+        const result = await withCache(cacheKey, 60, async () => {
             const bestSellingIds = await getBestSellingIds(db);
             const bestSellingIdsSet = new Set(bestSellingIds);
 
             const formatProducts = (prods) => prods.map(p => ({
                 ...p,
+                colors: (p.colors || []).map(c => ({
+                    name: c.name,
+                    hex: c.hex,
+                    image: c.image && c.image !== p.thumbnail ? c.image : undefined
+                })),
                 badge: p.badge || (bestSellingIdsSet.has(p._id ? p._id.toString() : "") ? "best-seller" : null)
             }));
 
-            if (page && limit) {
-                const skip = (page - 1) * limit;
+            if (limit) {
+                const pageNum = page || 1;
+                const skip = (pageNum - 1) * limit;
                 const countPromise = Object.keys(query).length === 0
                     ? productsCollection.estimatedDocumentCount()
                     : productsCollection.countDocuments(query);
@@ -302,7 +349,7 @@ const getAllProducts = async (req, res) => {
 
                 return {
                     totalProducts,
-                    currentPage: page,
+                    currentPage: pageNum,
                     totalPages: Math.ceil(totalProducts / limit),
                     products: formatProducts(products),
                 };
@@ -348,7 +395,7 @@ const getSingleProduct = async (req, res) => {
         const db = getDB();
         const productsCollection = db.collection("products");
 
-        const result = await productsCollection.findOne(buildIdQuery(id));
+        const result = await withCache(`product_${id}`, 300, () => productsCollection.findOne(buildIdQuery(id)));
 
         if (!result) {
             return res.status(404).send({ message: "Product not found" });
@@ -357,6 +404,80 @@ const getSingleProduct = async (req, res) => {
         res.send(result);
     } catch (error) {
         console.error(error);
+        res.status(500).send({ message: "Internal Server Error" });
+    }
+};
+
+const getRelatedProducts = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const db = getDB();
+        const productsCollection = db.collection("products");
+
+        const cacheKey = `related_${id}`;
+        const related = await withCache(cacheKey, 300, async () => {
+            const currentProduct = await productsCollection.findOne(buildIdQuery(id));
+            const category = currentProduct?.category;
+
+            const excludeId = currentProduct?._id || (ObjectId.isValid(id) ? new ObjectId(id) : id);
+            const excludedIds = [excludeId];
+            if (currentProduct?._id) excludedIds.push(currentProduct._id.toString());
+            if (id) excludedIds.push(id);
+
+            const lightProjection = {
+                title: 1,
+                price: 1,
+                discountPercentage: 1,
+                stock: 1,
+                thumbnail: 1,
+                colors: 1,
+                category: 1,
+                badge: 1
+            };
+
+            let products = [];
+            if (category) {
+                products = await productsCollection
+                    .find({
+                        _id: { $nin: excludedIds },
+                        category: category
+                    })
+                    .project(lightProjection)
+                    .sort({ _id: -1 })
+                    .limit(12)
+                    .toArray();
+            }
+
+            if (products.length < 8) {
+                const foundIds = [...excludedIds, ...products.map(p => p._id)];
+                const needed = 12 - products.length;
+
+                const fallbackProducts = await productsCollection
+                    .find({
+                        _id: { $nin: foundIds },
+                        stock: { $gt: 0 }
+                    })
+                    .project(lightProjection)
+                    .sort({ _id: -1 })
+                    .limit(needed)
+                    .toArray();
+
+                products = [...products, ...fallbackProducts];
+            }
+
+            return products.map(p => ({
+                ...p,
+                colors: (p.colors || []).map(c => ({
+                    name: c.name,
+                    hex: c.hex,
+                    image: c.image && c.image !== p.thumbnail ? c.image : undefined
+                }))
+            }));
+        });
+
+        res.send(related);
+    } catch (error) {
+        console.error("getRelatedProducts error:", error);
         res.status(500).send({ message: "Internal Server Error" });
     }
 };
@@ -491,7 +612,16 @@ const getFlashSaleProducts = async (req, res) => {
                 ? Math.max(...products.map(p => p.stock || 1))
                 : 1;
 
-            return { products, maxStock };
+            const cleanProducts = products.map(p => ({
+                ...p,
+                colors: (p.colors || []).map(c => ({
+                    name: c.name,
+                    hex: c.hex,
+                    image: c.image && c.image !== p.thumbnail ? c.image : undefined
+                }))
+            }));
+
+            return { products: cleanProducts, maxStock };
         });
 
         res.send({ products, maxStock });
@@ -521,7 +651,7 @@ const getNewArrivals = async (req, res) => {
             const db = getDB();
             const productsCollection = db.collection("products");
 
-            return await productsCollection
+            const prods = await productsCollection
                 .find({})
                 .project({
                     description: 0,
@@ -544,6 +674,15 @@ const getNewArrivals = async (req, res) => {
                 })
                 .limit(12)
                 .toArray();
+
+            return prods.map(p => ({
+                ...p,
+                colors: (p.colors || []).map(c => ({
+                    name: c.name,
+                    hex: c.hex,
+                    image: c.image && c.image !== p.thumbnail ? c.image : undefined
+                }))
+            }));
         });
 
         res.send({ products });
@@ -616,6 +755,7 @@ module.exports = {
     createProduct,
     getAllProducts,
     getSingleProduct,
+    getRelatedProducts,
     updateProduct,
     deleteProduct,
     getFlashSaleProducts,

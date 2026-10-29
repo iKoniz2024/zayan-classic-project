@@ -6,15 +6,15 @@ export const metadata = {
   title: "All Products",
 };
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 async function fetchProductsData() {
   const baseUrl = getApiUrl();
 
   try {
     const [categoriesRes, productsRes] = await Promise.all([
-      fetch(`${baseUrl}/categories`, { next: { revalidate: 10 } }),
-      fetch(`${baseUrl}/products?page=1&limit=12&sort=newest`, { cache: "no-store" }),
+      fetch(`${baseUrl}/categories`, { next: { revalidate: 300 } }),
+      fetch(`${baseUrl}/products?page=1&limit=12&sort=newest`, { next: { revalidate: 60 } }),
     ]);
 
     return {

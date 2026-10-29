@@ -45,39 +45,50 @@ export default function Products({ initialCategories, initialProducts }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const selectedCategory = searchParams.get("category") || "";
-  const searchQuery = searchParams.get("search") || "";
-
+  const [selectedCategory, setSelectedCategory] = useState(() => searchParams.get("category") || "");
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get("search") || "");
+  const [localSearch, setLocalSearch] = useState(() => searchParams.get("search") || "");
   const [sort, setSort] = useState("newest");
   const [showFilters, setShowFilters] = useState(false);
-  const [localSearch, setLocalSearch] = useState(searchQuery);
 
+  // Sync state if external searchParams change (e.g. browser back/forward)
   useEffect(() => {
-    setLocalSearch(searchQuery);
-  }, [searchQuery]);
+    const urlCategory = searchParams.get("category") || "";
+    const urlSearch = searchParams.get("search") || "";
+    setSelectedCategory(urlCategory);
+    setSearchQuery(urlSearch);
+    setLocalSearch(urlSearch);
+  }, [searchParams]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (localSearch !== searchQuery) {
-        applySearch(localSearch);
-      }
-    }, 250);
-    return () => clearTimeout(timer);
-  }, [localSearch]);
+  const updateUrl = (categorySlug, searchVal) => {
+    const params = new URLSearchParams();
+    if (categorySlug) params.set("category", categorySlug);
+    if (searchVal) params.set("search", searchVal);
+    const qs = params.toString();
+    const newUrl = qs ? `${pathname}?${qs}` : pathname;
+    window.history.replaceState(null, "", newUrl);
+  };
 
   const updateCategory = (slug) => {
-    const next = new URLSearchParams(searchParams.toString());
-    if (slug) next.set("category", slug);
-    else next.delete("category");
-    router.push(pathname + "?" + next.toString());
+    const nextCat = slug || "";
+    setSelectedCategory(nextCat);
+    updateUrl(nextCat, searchQuery);
   };
 
   const applySearch = (q) => {
-    const next = new URLSearchParams(searchParams.toString());
-    if (q) next.set("search", q);
-    else next.delete("search");
-    router.push(pathname + "?" + next.toString());
+    const cleanQ = (q || "").trim();
+    setSearchQuery(cleanQ);
+    updateUrl(selectedCategory, cleanQ);
   };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (localSearch.trim() !== searchQuery) {
+        applySearch(localSearch);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [localSearch]);
 
   const { data: categoriesData } = useQuery({
     queryKey: ["categories"],
@@ -132,15 +143,18 @@ export default function Products({ initialCategories, initialProducts }) {
   const filteredProducts = data?.products ?? [];
   const totalPages = data?.totalPages ?? 1;
   const totalProductsCount = data?.totalProducts ?? 0;
-  const showSkeleton = isLoading || (isFetching && filteredProducts.length === 0);
+  const showSkeleton = isLoading && filteredProducts.length === 0;
 
   const handleCategoryChange = (slug) => {
     updateCategory(slug === selectedCategory ? "" : slug);
   };
 
   const clearFilters = () => {
-    router.push(pathname);
+    setSelectedCategory("");
+    setSearchQuery("");
+    setLocalSearch("");
     setSort("newest");
+    window.history.replaceState(null, "", pathname);
   };
 
   const hasFilters = selectedCategory || searchQuery;

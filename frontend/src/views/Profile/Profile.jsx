@@ -65,7 +65,7 @@ export default function Profile({ children }) {
     <div className="min-h-screen bg-background px-4 py-8 sm:px-6 lg:px-8">
       <Helmet><title>{`Profile | ${siteName}`}</title></Helmet>
       <div className="mx-auto max-w-2xl">
-        <Button variant="ghost" size="sm" className="mb-4" onClick={() => router.push(-1)}>
+        <Button variant="ghost" size="sm" className="mb-4" onClick={() => router.back()}>
           <ArrowLeft className="size-4" data-icon="inline-start" />
           Back
         </Button>

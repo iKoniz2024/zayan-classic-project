@@ -59,7 +59,7 @@ export default function ChangePassword({ children }) {
         <title>{`Change Password | ${siteName}`}</title>
       </Helmet>
       <div className="mx-auto max-w-md">
-        <Button variant="ghost" size="sm" className="mb-4" onClick={() => router.push(-1)}>
+        <Button variant="ghost" size="sm" className="mb-4" onClick={() => router.back()}>
           <ArrowLeft className="size-4" data-icon="inline-start" />
           Back
         </Button>

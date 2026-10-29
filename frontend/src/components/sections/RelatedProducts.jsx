@@ -5,28 +5,11 @@ import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { ShoppingCart, Trophy, Sparkles, Star, Flame } from "lucide-react";
-import { getProducts, getBestSellingProducts, getNewArrivals, getProductById } from "@/services/product.api";
-import { Skeleton } from "@/components/ui/skeleton";
+import { getRelatedProducts, getProductById } from "@/services/product.api";
 import { Badge } from "@/components/ui/badge";
 import { formatBDT } from "@/utils/currency";
 import OrderModal from "@/components/ui/OrderModal";
 import { useAuth } from "@/hooks/useAuth";
-
-function RelatedProductsSkeleton() {
-  return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="flex flex-col overflow-hidden rounded-xl border border-border bg-card">
-          <div className="relative aspect-square w-full p-2">
-            <Skeleton className="h-full w-full rounded-lg" />
-            <Skeleton className="absolute bottom-2 left-1/2 h-6 w-20 -translate-x-1/2 rounded-lg" />
-          </div>
-          <Skeleton className="h-9 w-full rounded-none" />
-        </div>
-      ))}
-    </div>
-  );
-}
 
 const badgeConfig = {
   "best-seller": {
@@ -179,7 +162,8 @@ function CompactProductCard({ product, index }) {
   );
 }
 
-export default function RelatedProducts({ currentProduct }) {
+export default function RelatedProducts({ currentProduct, initialData }) {
+  const queryClient = useQueryClient();
   const categorySlug = typeof currentProduct?.category === "object"
     ? currentProduct?.category?.slug || currentProduct?.category?.name || ""
     : currentProduct?.category || "";
@@ -187,64 +171,45 @@ export default function RelatedProducts({ currentProduct }) {
 
   const { data: relatedProducts = [], isLoading } = useQuery({
     queryKey: ["related-products", categorySlug, currentId],
-    queryFn: async () => {
-      let result = [];
-
-      if (categorySlug) {
-        // Fetch products in the same category
-        const response = await getProducts({ category: categorySlug, limit: 12 });
-        const prods = response?.products || (Array.isArray(response) ? response : []);
-        result = prods.filter((p) => p._id !== currentId);
+    queryFn: () => getRelatedProducts(currentId, categorySlug),
+    initialData: () => {
+      // 1. Prioritize server-provided initialData
+      if (initialData && Array.isArray(initialData) && initialData.length > 0) {
+        return initialData;
       }
 
-      // ONLY if there are ZERO products in the same category, fallback to mixed New Arrivals & Best Selling
-      if (result.length === 0) {
-        try {
-          const [newRes, bestRes] = await Promise.all([
-            getNewArrivals().catch(() => ({})),
-            getBestSellingProducts().catch(() => ({})),
-          ]);
+      // 2. Client-side instant cache bridge:
+      // Instantly load from React Query cached products (from home, all products, flash sale, best sellers)
+      const listQueries = queryClient.getQueriesData({ queryKey: ["products"] });
+      const sameCategory = [];
+      const fallbackList = [];
+      const seen = new Set();
+      if (currentId) seen.add(String(currentId));
 
-          const newProds = (newRes?.products || (Array.isArray(newRes) ? newRes : []))
-            .filter((p) => p._id !== currentId)
-            .map((p) => ({ ...p, badge: p.badge || "new-arrival" }));
+      for (const [, result] of listQueries) {
+        const prods = result?.products || (Array.isArray(result) ? result : []);
+        for (const p of prods) {
+          const pId = String(p?._id || "");
+          if (!pId || seen.has(pId)) continue;
+          seen.add(pId);
 
-          const bestProds = (bestRes?.products || (Array.isArray(bestRes) ? bestRes : []))
-            .filter((p) => p._id !== currentId)
-            .map((p) => ({ ...p, badge: p.badge || "best-seller" }));
-
-          // Interleave New Arrivals and Best Selling products
-          const mixed = [];
-          const seenIds = new Set([currentId]);
-          const maxLength = Math.max(newProds.length, bestProds.length);
-
-          for (let i = 0; i < maxLength; i++) {
-            if (i < newProds.length && !seenIds.has(newProds[i]._id)) {
-              seenIds.add(newProds[i]._id);
-              mixed.push(newProds[i]);
-            }
-            if (i < bestProds.length && !seenIds.has(bestProds[i]._id)) {
-              seenIds.add(bestProds[i]._id);
-              mixed.push(bestProds[i]);
-            }
+          const pCat = typeof p.category === "object" ? p.category?.slug || p.category?.name : p.category;
+          if (pCat && categorySlug && String(pCat).toLowerCase() === String(categorySlug).toLowerCase()) {
+            sameCategory.push(p);
+          } else {
+            fallbackList.push(p);
           }
-
-          result = mixed;
-        } catch (e) {
-          console.error("Fallback mixed products fetch error:", e);
         }
       }
 
-      return result.slice(0, 12);
+      const combined = [...sameCategory, ...fallbackList].slice(0, 12);
+      if (combined.length > 0) return combined;
+      return undefined;
     },
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    enabled: !!currentProduct,
+    enabled: !!currentId,
   });
-
-  if (!isLoading && relatedProducts.length === 0) {
-    return null;
-  }
 
   return (
     <section className="mt-14 border-t border-border/80 pt-10">
@@ -260,9 +225,7 @@ export default function RelatedProducts({ currentProduct }) {
         </h2>
       </motion.div>
 
-      {isLoading ? (
-        <RelatedProductsSkeleton />
-      ) : (
+      {relatedProducts.length > 0 ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {relatedProducts.map((product, i) => (
             <CompactProductCard
@@ -272,7 +235,13 @@ export default function RelatedProducts({ currentProduct }) {
             />
           ))}
         </div>
-      )}
+      ) : !isLoading ? (
+        <div className="rounded-xl border border-dashed border-border/80 py-10 text-center">
+          <p className="text-sm font-medium text-muted-foreground">
+            No related products found
+          </p>
+        </div>
+      ) : null}
     </section>
   );
 }

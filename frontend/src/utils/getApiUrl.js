@@ -17,18 +17,18 @@ export function getApiUrl() {
     return "http://localhost:5000/api";
   }
 
-  let url = process.env.NEXT_PUBLIC_API_URL;
+  let clientUrl = process.env.NEXT_PUBLIC_API_URL;
 
   // If in production browser but NEXT_PUBLIC_API_URL was set to localhost, ignore localhost!
-  if (!url || url.includes("localhost") || url.includes("127.0.0.1")) {
-    url = window.location.origin + "/api";
+  if (!clientUrl || clientUrl.includes("localhost") || clientUrl.includes("127.0.0.1")) {
+    clientUrl = window.location.origin + "/api";
   }
 
-  url = url.trim().replace(/\/+$/, "");
+  clientUrl = clientUrl.trim().replace(/\/+$/, "");
 
-  if (!url.endsWith("/api")) {
-    url += "/api";
+  if (!clientUrl.endsWith("/api")) {
+    clientUrl += "/api";
   }
 
-  return url;
+  return clientUrl;
 }

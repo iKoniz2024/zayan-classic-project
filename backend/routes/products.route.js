@@ -4,6 +4,7 @@ const {
     createProduct,
     getAllProducts,
     getSingleProduct,
+    getRelatedProducts,
     updateProduct,
     deleteProduct,
     getFlashSaleProducts,
@@ -43,6 +44,8 @@ router.post(
 );
 
 router.get("/", getAllProducts);
+
+router.get("/:id/related", getRelatedProducts);
 
 router.get("/:id", getSingleProduct);
 

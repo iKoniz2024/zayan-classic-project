@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useState, useMemo, useEffect } from "react";
 import RelatedProducts from "@/components/sections/RelatedProducts";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Minus,
   Plus,
@@ -54,9 +54,10 @@ function ProductSkeleton() {
 import usePageTitle from "@/hooks/usePageTitle";
 import { trackMetaPixelEvent } from "@/utils/metaPixel";
 
-export default function ProductDetails({ children }) {
+export default function ProductDetails({ initialProduct, initialRelatedProducts, id: propId }) {
   const { siteName } = useSettings();
-  const { id } = useParams();
+  const params = useParams();
+  const id = propId || params?.id;
   const router = useRouter();
   const { addToCart } = useAddToCart();
   const { user } = useAuth();
@@ -67,32 +68,53 @@ export default function ProductDetails({ children }) {
   const [activeDisplayImage, setActiveDisplayImage] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("description");
+  const [shareUrl, setShareUrl] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setShareUrl(window.location.href);
+    }
+  }, []);
+
+  const queryClient = useQueryClient();
 
   const { data: product, isLoading } = useQuery({
     queryKey: ["product", id],
     queryFn: () => getProductById(id),
+    initialData: () => {
+      if (initialProduct) return initialProduct;
+      const cached = queryClient.getQueryData(["product", id]);
+      if (cached) return cached;
+      const listQueries = queryClient.getQueriesData({ queryKey: ["products"] });
+      for (const [, result] of listQueries) {
+        const prods = result?.products || (Array.isArray(result) ? result : []);
+        const match = prods.find((p) => String(p._id) === String(id));
+        if (match) return match;
+      }
+      return undefined;
+    },
     enabled: !!id,
-    staleTime: 60 * 1000,
+    staleTime: 5 * 60 * 1000,
   });
 
   usePageTitle(product?.title || "Product Details");
 
   // Sync color, size & display image when product loads
-  const [prevProductId, setPrevProductId] = useState(null);
-  if (product && product._id !== prevProductId) {
-    setPrevProductId(product._id);
-    setSelectedSize(null);
-    setQuantity(1);
-    if (product.colors?.length > 0) {
-      setSelectedColor(product.colors[0]);
-      if (product.colors[0].image) {
-        setActiveDisplayImage(product.colors[0].image);
+  useEffect(() => {
+    if (product && product._id) {
+      setSelectedSize(null);
+      setQuantity(1);
+      if (product.colors?.length > 0) {
+        setSelectedColor(product.colors[0]);
+        if (product.colors[0].image) {
+          setActiveDisplayImage(product.colors[0].image);
+        }
+      } else {
+        setSelectedColor(null);
+        setActiveDisplayImage(null);
       }
-    } else {
-      setSelectedColor(null);
-      setActiveDisplayImage(null);
     }
-  }
+  }, [product?._id]);
 
   useEffect(() => {
     if (id) {
@@ -195,13 +217,22 @@ export default function ProductDetails({ children }) {
     }
   };
 
-  if (isLoading) return <ProductSkeleton />;
+  if (isLoading && !product) return <ProductSkeleton />;
 
   if (!product) {
     return (
       <div className="container mx-auto px-4 py-12 text-center">
         <p className="text-muted-foreground">Product not found.</p>
-        <Button className="mt-4" onClick={() => router.push(-1)}>
+        <Button
+          className="mt-4"
+          onClick={() => {
+            if (typeof window !== "undefined" && window.history.length > 1) {
+              router.back();
+            } else {
+              router.push("/products");
+            }
+          }}
+        >
           Go Back
         </Button>
       </div>
@@ -548,7 +579,7 @@ export default function ProductDetails({ children }) {
             {/* Social Share */}
             <div className="flex items-center gap-2 pt-2 justify-center">
               <a
-                href={`https://www.facebook.com/sharer/sharer.php?u=${window.location.href}`}
+                href={shareUrl ? `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}` : "#"}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground transition-opacity hover:opacity-90"
@@ -556,7 +587,7 @@ export default function ProductDetails({ children }) {
                 <svg className="size-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" /></svg>
               </a>
               <a
-                href={`https://twitter.com/intent/tweet?text=${product.title}&url=${window.location.href}`}
+                href={shareUrl ? `https://twitter.com/intent/tweet?text=${encodeURIComponent(product.title || "")}&url=${encodeURIComponent(shareUrl)}` : "#"}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground transition-opacity hover:opacity-90"
@@ -651,7 +682,7 @@ export default function ProductDetails({ children }) {
         </div>
 
         {/* Related Products Section */}
-        <RelatedProducts currentProduct={product} />
+        <RelatedProducts currentProduct={product} initialData={initialRelatedProducts} />
       </div>
     </>
   );
