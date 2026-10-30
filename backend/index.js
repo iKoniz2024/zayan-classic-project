@@ -7,7 +7,7 @@ const events = require("events");
 
 events.defaultMaxListeners = 30;
 
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, ".env") });
 
 const { connectDB } = require("./config/db");
 

@@ -10,80 +10,59 @@ const createOrder = async (req, res) => {
         const { paymentMethod, shippingAddress, deliveryArea } = req.body;
 
         const db = getDB();
-
         const cartsCollection = db.collection("carts");
         const productsCollection = db.collection("products");
         const ordersCollection = db.collection("orders");
 
-        const cart = await cartsCollection.aggregate([
-            {
-                $match: {
-                    userId: new ObjectId(req.user.id),
-                },
-            },
-            {
-                $unwind: "$items",
-            },
-            {
-                $lookup: {
-                    from: "products",
-                    localField: "items.productId",
-                    foreignField: "_id",
-                    as: "product",
-                },
-            },
-            {
-                $unwind: "$product",
-            },
-            {
-                $project: {
-                    productId: "$product._id",
-                    title: "$product.title",
-                    thumbnail: { $ifNull: ["$items.colorImage", "$product.thumbnail"] },
-                    price: "$product.price",
-                    quantity: "$items.quantity",
-                    size: "$items.size",
-                    color: "$items.color",
-                    colorImage: "$items.colorImage",
-                    subtotal: {
-                        $multiply: [
-                            "$items.quantity",
-                            "$product.price",
-                        ],
-                    },
-                },
-            },
-        ]).toArray();
+        const cartDoc = await cartsCollection.findOne({
+            userId: new ObjectId(req.user.id),
+        });
 
-        if (!cart.length) {
+        if (!cartDoc || !cartDoc.items || !cartDoc.items.length) {
             return res.status(400).send({
                 message: "Cart is empty",
             });
         }
 
-        for (const item of cart) {
-            const product = await productsCollection.findOne({
-                _id: item.productId,
-            });
+        const items = cartDoc.items;
+        const productObjectIds = items
+            .map(item => ObjectId.isValid(item.productId) ? new ObjectId(item.productId) : null)
+            .filter(Boolean);
+
+        const products = await productsCollection
+            .find({ _id: { $in: productObjectIds } })
+            .project({
+                title: 1,
+                price: 1,
+                discountPercentage: 1,
+                stock: 1,
+                availabilityStatus: 1,
+                thumbnail: 1,
+                colors: 1
+            })
+            .toArray();
+
+        const productMap = new Map(products.map(p => [p._id.toString(), p]));
+        const cart = [];
+
+        for (const item of items) {
+            const product = productMap.get(item.productId ? item.productId.toString() : "");
 
             if (!product) {
                 return res.status(404).send({
-                    message: `${item.title} not found`,
+                    message: "Product not found",
                 });
             }
 
-            if (
-                product.stock === 0 ||
-                product.availabilityStatus === "Out of Stock"
-            ) {
+            if (product.stock === 0 || product.availabilityStatus === "Out of Stock") {
                 return res.status(400).send({
-                    message: `${item.title} is out of stock`,
+                    message: `${product.title} is out of stock`,
                 });
             }
 
             if (item.quantity > product.stock) {
                 return res.status(400).send({
-                    message: `Only ${product.stock} ${item.title} available in stock`,
+                    message: `Only ${product.stock} ${product.title} available in stock`,
                 });
             }
 
@@ -92,25 +71,26 @@ const createOrder = async (req, res) => {
                 ? Number((product.price * (1 - disc / 100)).toFixed(2))
                 : Number(product.price || 0);
 
-            item.price = finalPrice;
-            item.originalPrice = product.price;
-            item.discountPercentage = disc;
-            item.subtotal = Number((item.quantity * finalPrice).toFixed(2));
+            cart.push({
+                productId: product._id,
+                title: product.title,
+                thumbnail: item.colorImage || product.thumbnail,
+                price: finalPrice,
+                originalPrice: product.price,
+                discountPercentage: disc,
+                quantity: item.quantity,
+                size: item.size || "",
+                color: item.color || "",
+                colorImage: item.colorImage || "",
+                subtotal: Number((item.quantity * finalPrice).toFixed(2)),
+            });
         }
 
-        const totalItems = cart.reduce(
-            (sum, item) => sum + item.quantity,
-            0
-        );
-
-        const totalPrice = cart.reduce(
-            (sum, item) => sum + item.subtotal,
-            0
-        );
+        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+        const totalPrice = cart.reduce((sum, item) => sum + item.subtotal, 0);
 
         const SHIPPING_INSIDE_DHAKA = 60;
         const SHIPPING_OUTSIDE_DHAKA = 120;
-
         const shippingCost = deliveryArea === "inside_dhaka" ? SHIPPING_INSIDE_DHAKA : SHIPPING_OUTSIDE_DHAKA;
         const grandTotal = totalPrice + shippingCost;
 
@@ -133,42 +113,47 @@ const createOrder = async (req, res) => {
         const result = await ordersCollection.insertOne(order);
         order._id = result.insertedId;
 
-        // Trigger Meta Conversions API Purchase Event (asynchronous & non-blocking)
-        sendPurchaseEvent(order, req);
+        // Clear user cart in background
+        cartsCollection.deleteOne({ userId: new ObjectId(req.user.id) }).catch(() => {});
 
-        await cartsCollection.deleteOne({
-            userId: new ObjectId(req.user.id),
-        });
-
-        // Deduct product stock
-        for (const item of cart) {
-            if (item.productId) {
-                const updatedProduct = await productsCollection.findOneAndUpdate(
-                    { _id: new ObjectId(item.productId) },
-                    { $inc: { stock: -item.quantity } },
-                    { returnDocument: "after" }
-                );
-                if (updatedProduct && updatedProduct.stock <= 0) {
-                    await productsCollection.updateOne(
-                        { _id: new ObjectId(item.productId) },
-                        { $set: { availabilityStatus: "Out of Stock", stock: 0 } }
-                    );
-                }
+        // Deduct stock in parallel bulk operation
+        const bulkOps = cart.map(item => ({
+            updateOne: {
+                filter: { _id: new ObjectId(item.productId) },
+                update: { $inc: { stock: -item.quantity } }
             }
+        }));
+
+        if (bulkOps.length > 0) {
+            productsCollection.bulkWrite(bulkOps, { ordered: false }).then(async () => {
+                await productsCollection.updateMany(
+                    { _id: { $in: productObjectIds }, stock: { $lte: 0 } },
+                    { $set: { availabilityStatus: "Out of Stock", stock: 0 } }
+                );
+            }).catch(err => console.error("Bulk stock update error:", err));
         }
 
-        clearCache();
+        // Targeted cache invalidation
+        clearCache("productsCatalog");
+        clearCache("newArrivals");
+        clearCache("bestSellingProducts");
+        clearCache("flashSaleProducts");
+        clearCache("orders_null_null_");
+        clearCache("dashboardStats");
+        clearCache("bestSellingIdsSet");
 
+        // Non-blocking async background notifications
+        sendPurchaseEvent(order, req);
         sendInvoiceEmail(order).catch((err) => console.error("Error sending invoice email:", err));
 
         res.status(201).send({
             message: "Order placed successfully",
             insertedId: result.insertedId,
+            orderId: result.insertedId,
         });
 
     } catch (error) {
-        console.log(error);
-
+        console.error("createOrder error:", error);
         res.status(500).send({
             message: "Internal Server Error",
         });
@@ -183,16 +168,37 @@ const createGuestOrder = async (req, res) => {
         const productsCollection = db.collection("products");
         const ordersCollection = db.collection("orders");
 
+        if (!items || !items.length) {
+            return res.status(400).send({ message: "Cart is empty" });
+        }
+
+        // Fetch all ordered products in a single database round-trip
+        const productObjectIds = items
+            .map(item => ObjectId.isValid(item.productId) ? new ObjectId(item.productId) : null)
+            .filter(Boolean);
+
+        const products = await productsCollection
+            .find({ _id: { $in: productObjectIds } })
+            .project({
+                title: 1,
+                price: 1,
+                discountPercentage: 1,
+                stock: 1,
+                availabilityStatus: 1,
+                thumbnail: 1,
+                colors: 1
+            })
+            .toArray();
+
+        const productMap = new Map(products.map(p => [p._id.toString(), p]));
         const cart = [];
 
         for (const item of items) {
-            const product = await productsCollection.findOne({
-                _id: new ObjectId(item.productId),
-            });
+            const product = productMap.get(item.productId ? item.productId.toString() : "");
 
             if (!product) {
                 return res.status(404).send({
-                    message: `Product not found`,
+                    message: "Product not found",
                 });
             }
 
@@ -233,14 +239,13 @@ const createGuestOrder = async (req, res) => {
 
         const SHIPPING_INSIDE_DHAKA = 60;
         const SHIPPING_OUTSIDE_DHAKA = 120;
-
         const shippingCost = deliveryArea === "inside_dhaka" ? SHIPPING_INSIDE_DHAKA : SHIPPING_OUTSIDE_DHAKA;
         const grandTotal = totalPrice + shippingCost;
 
         const order = {
             userId: null,
             guestPhone: shippingAddress.phone,
-            guestEmail: shippingAddress.email,
+            guestEmail: shippingAddress.email || "",
             items: cart,
             totalItems,
             subtotal: totalPrice,
@@ -258,26 +263,37 @@ const createGuestOrder = async (req, res) => {
         const result = await ordersCollection.insertOne(order);
         order._id = result.insertedId;
 
-        // Deduct product stock
-        for (const item of cart) {
-            if (item.productId) {
-                const updatedProduct = await productsCollection.findOneAndUpdate(
-                    { _id: new ObjectId(item.productId) },
-                    { $inc: { stock: -item.quantity } },
-                    { returnDocument: "after" }
-                );
-                if (updatedProduct && updatedProduct.stock <= 0) {
-                    await productsCollection.updateOne(
-                        { _id: new ObjectId(item.productId) },
-                        { $set: { availabilityStatus: "Out of Stock", stock: 0 } }
-                    );
-                }
+        // Deduct stock in parallel bulk operation
+        const bulkOps = cart.map(item => ({
+            updateOne: {
+                filter: { _id: new ObjectId(item.productId) },
+                update: { $inc: { stock: -item.quantity } }
             }
+        }));
+
+        if (bulkOps.length > 0) {
+            productsCollection.bulkWrite(bulkOps, { ordered: false }).then(async () => {
+                await productsCollection.updateMany(
+                    { _id: { $in: productObjectIds }, stock: { $lte: 0 } },
+                    { $set: { availabilityStatus: "Out of Stock", stock: 0 } }
+                );
+            }).catch(err => console.error("Bulk stock update error:", err));
         }
 
-        clearCache();
+        // Targeted cache invalidation
+        clearCache("productsCatalog");
+        clearCache("newArrivals");
+        clearCache("bestSellingProducts");
+        clearCache("flashSaleProducts");
+        clearCache("orders_null_null_");
+        clearCache("dashboardStats");
+        clearCache("bestSellingIdsSet");
 
-        sendInvoiceEmail(order).catch((err) => console.error("Error sending invoice email:", err));
+        // Non-blocking async background notifications
+        sendPurchaseEvent(order, req);
+        if (shippingAddress.email) {
+            sendInvoiceEmail(order).catch((err) => console.error("Error sending invoice email:", err));
+        }
 
         res.status(201).send({
             message: "Order placed successfully",
@@ -286,8 +302,7 @@ const createGuestOrder = async (req, res) => {
         });
 
     } catch (error) {
-        console.log(error);
-
+        console.error("createGuestOrder error:", error);
         res.status(500).send({
             message: "Internal Server Error",
         });

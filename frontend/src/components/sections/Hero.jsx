@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination, Navigation } from "swiper/modules";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getBanners } from "@/services/banner.api";
 
 import "swiper/css";
@@ -28,15 +28,22 @@ const heroStyles = `
 `;
 
 export default function Hero({ initialData }) {
+  const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ["banners"],
     queryFn: getBanners,
-    initialData,
+    initialData: () => {
+      if (Array.isArray(initialData) && initialData.length > 0) return initialData;
+      const cached = queryClient.getQueryData(["banners"]);
+      if (Array.isArray(cached) && cached.length > 0) return cached;
+      return undefined;
+    },
+    staleTime: 5 * 60 * 1000,
   });
 
   const banners = (data ?? []).filter((b) => b.isActive && (b.image || b.images?.length > 0));
 
-  if (isLoading) {
+  if (isLoading && banners.length === 0) {
     return (
       <section id="hero" className="relative overflow-hidden py-4">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -58,7 +65,8 @@ export default function Hero({ initialData }) {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <Swiper
           modules={[Autoplay, Pagination, Navigation]}
-          speed={800}
+          spaceBetween={0}
+          slidesPerView={1}
           autoplay={{ delay: 4000, disableOnInteraction: false }}
           pagination={{ clickable: true }}
           navigation={{
@@ -66,27 +74,47 @@ export default function Hero({ initialData }) {
             nextEl: ".hero-next",
           }}
           loop={banners.length > 1}
-          className="hero-swiper w-full h-auto aspect-[2.3/1] sm:aspect-[2.8/1] md:aspect-[3/1] lg:h-86"
+          className="hero-swiper relative overflow-hidden rounded-2xl"
         >
-          {banners.map((banner) => (
-            <SwiperSlide key={banner._id}>
-              <Link href="/products" className="block size-full">
-                <div className="relative size-full">
-                  <img
-                    src={banner.image || banner.images?.[0]}
-                    alt={banner.title}
-                    className="size-full object-cover object-center"
-                  />
-                </div>
-              </Link>
-            </SwiperSlide>
-          ))}
+          {banners.map((banner, index) => {
+            const imageSrc = banner.image || banner.images?.[0];
+            const content = (
+              <div className="relative aspect-16/7 w-full overflow-hidden bg-muted sm:aspect-21/9">
+                <img
+                  src={imageSrc}
+                  alt={banner.title || `Banner ${index + 1}`}
+                  className="h-full w-full object-cover"
+                  loading={index === 0 ? "eager" : "lazy"}
+                  decoding="async"
+                />
+              </div>
+            );
+
+            return (
+              <SwiperSlide key={banner._id || index}>
+                {banner.link ? (
+                  <Link href={banner.link} className="block w-full">
+                    {content}
+                  </Link>
+                ) : (
+                  content
+                )}
+              </SwiperSlide>
+            );
+          })}
+
           {banners.length > 1 && (
             <>
-              <button className="hero-prev absolute left-3 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-background/80 text-foreground shadow-md backdrop-blur-sm transition-colors hover:bg-background sm:left-5 sm:size-12">
+              <button
+                className="hero-prev absolute left-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-background/60 p-2 text-foreground backdrop-blur-xs transition hover:bg-background/90 cursor-pointer sm:left-4"
+                aria-label="Previous banner"
+              >
                 <ChevronLeft className="size-5" />
               </button>
-              <button className="hero-next absolute right-3 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-background/80 text-foreground shadow-md backdrop-blur-sm transition-colors hover:bg-background sm:right-5 sm:size-12">
+              <button
+                className="hero-next absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-background/60 p-2 text-foreground backdrop-blur-xs transition hover:bg-background/90 cursor-pointer sm:right-4"
+                aria-label="Next banner"
+              >
                 <ChevronRight className="size-5" />
               </button>
             </>

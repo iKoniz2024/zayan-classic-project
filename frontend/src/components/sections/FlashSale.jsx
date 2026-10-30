@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Zap } from "lucide-react";
 import { getFlashSaleProducts } from "@/services/product.api";
@@ -36,16 +36,23 @@ import usePageTitle from "@/hooks/usePageTitle";
 export default function FlashSale({ initialData }) {
   const { siteName } = useSettings();
   usePageTitle("Flash Sale");
+  const queryClient = useQueryClient();
 
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["flash-sale"],
     queryFn: getFlashSaleProducts,
-    initialData: (initialData?.products?.length > 0) ? initialData : undefined,
+    initialData: () => {
+      if (initialData?.products?.length > 0) return initialData;
+      const cached = queryClient.getQueryData(["flash-sale"]);
+      if (cached?.products?.length > 0) return cached;
+      return undefined;
+    },
+    staleTime: 5 * 60 * 1000,
   });
 
   const products = data?.products ?? [];
   const maxStock = data?.maxStock ?? 1;
-  const showSkeleton = isLoading || (isFetching && products.length === 0);
+  const showSkeleton = isLoading && products.length === 0;
 
   return (
     <section id="flash-sale" className="relative overflow-hidden bg-linear-to-b from-gray-100/80 via-background to-background py-16 sm:py-20 dark:from-gray-900/20">

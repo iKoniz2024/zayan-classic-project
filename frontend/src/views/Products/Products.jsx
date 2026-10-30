@@ -86,7 +86,7 @@ export default function Products({ initialCategories, initialProducts }) {
       if (localSearch.trim() !== searchQuery) {
         applySearch(localSearch);
       }
-    }, 300);
+    }, 180);
     return () => clearTimeout(timer);
   }, [localSearch]);
 
@@ -138,6 +138,7 @@ export default function Products({ initialCategories, initialProducts }) {
     queryFn: () => getProducts({ search: searchQuery, category: activeCategorySlugs, sort, page, limit }),
     placeholderData: keepPreviousData,
     initialData: (!searchQuery && !activeCategorySlugs && sort === "newest" && page === 1 && initialProducts?.products?.length > 0) ? initialProducts : undefined,
+    staleTime: 3 * 60 * 1000,
   });
 
   const filteredProducts = data?.products ?? [];

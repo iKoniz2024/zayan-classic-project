@@ -7,7 +7,7 @@ export const metadata = {
 
 export const revalidate = 300;
 
-async function fetchWithTimeout(url, revalidateSec, timeoutMs = 2500) {
+async function fetchWithTimeout(url, revalidateSec, timeoutMs = 6000) {
   try {
     const res = await fetch(url, {
       next: { revalidate: revalidateSec },

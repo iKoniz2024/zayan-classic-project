@@ -85,11 +85,13 @@ export default function ProductDetails({ initialProduct, initialRelatedProducts,
       if (initialProduct) return initialProduct;
       const cached = queryClient.getQueryData(["product", id]);
       if (cached) return cached;
-      const listQueries = queryClient.getQueriesData({ queryKey: ["products"] });
-      for (const [, result] of listQueries) {
+      const allQueries = queryClient.getQueriesData({});
+      for (const [, result] of allQueries) {
         const prods = result?.products || (Array.isArray(result) ? result : []);
-        const match = prods.find((p) => String(p._id) === String(id));
-        if (match) return match;
+        if (Array.isArray(prods)) {
+          const match = prods.find((p) => String(p?._id) === String(id));
+          if (match) return match;
+        }
       }
       return undefined;
     },

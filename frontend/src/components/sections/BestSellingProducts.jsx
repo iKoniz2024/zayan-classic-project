@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { getBestSellingProducts } from "@/services/product.api";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,15 +33,22 @@ import usePageTitle from "@/hooks/usePageTitle";
 export default function BestSellingProducts({ initialData }) {
   const { siteName } = useSettings();
   usePageTitle("Best Selling Products");
+  const queryClient = useQueryClient();
 
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["best-selling-products"],
     queryFn: getBestSellingProducts,
-    initialData: (initialData?.products?.length > 0) ? initialData : undefined,
+    initialData: () => {
+      if (initialData?.products?.length > 0) return initialData;
+      const cached = queryClient.getQueryData(["best-selling-products"]);
+      if (cached?.products?.length > 0) return cached;
+      return undefined;
+    },
+    staleTime: 5 * 60 * 1000,
   });
 
   const bestSellingProducts = data?.products ?? [];
-  const showSkeleton = isLoading || (isFetching && bestSellingProducts.length === 0);
+  const showSkeleton = isLoading && bestSellingProducts.length === 0;
 
   return (
     <section id="best-selling" className="bg-background pb-16 pt-6 sm:pb-20 sm:pt-8">

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRef } from "react";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getNewArrivals } from "@/services/product.api";
@@ -28,15 +28,22 @@ function NewArrivalsSkeleton() {
 
 export default function NewArrivals({ initialData }) {
   const scrollRef = useRef(null);
+  const queryClient = useQueryClient();
 
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["new-arrivals"],
     queryFn: getNewArrivals,
-    initialData: (initialData?.products?.length > 0) ? initialData : undefined,
+    initialData: () => {
+      if (initialData?.products?.length > 0) return initialData;
+      const cached = queryClient.getQueryData(["new-arrivals"]);
+      if (cached?.products?.length > 0) return cached;
+      return undefined;
+    },
+    staleTime: 5 * 60 * 1000,
   });
 
   const products = data?.products ?? [];
-  const showSkeleton = isLoading || (isFetching && products.length === 0);
+  const showSkeleton = isLoading && products.length === 0;
 
   const scroll = (direction) => {
     if (scrollRef.current) {

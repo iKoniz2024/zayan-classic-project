@@ -152,9 +152,7 @@ export default function Checkout({ children }) {
         clearLocalCart();
         refetchCartCount(0);
       }
-      if (data?.insertedId) {
-        sendOrderInvoice(data.insertedId).catch(() => { });
-      }
+      
       router.push(`/orders/${data.insertedId}`);
     },
     onError: (err) => {

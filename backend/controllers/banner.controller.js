@@ -35,7 +35,7 @@ const createBanner = async (req, res) => {
 
 const getAllBanners = async (req, res) => {
     try {
-        const banners = await withCache("banners", 15, async () => {
+        const banners = await withCache("banners", 300, async () => {
             const db = getDB();
             const bannersCollection = db.collection("banners");
             return await bannersCollection.find({}).sort({ createdAt: -1 }).toArray();

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useMemo } from "react";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { getCategoriesWithCounts } from "@/services/category.api";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,10 +24,18 @@ function CategoriesSkeleton() {
 }
 
 export default function Categories({ initialData }) {
-  const { data: categoriesData, isLoading, isFetching } = useQuery({
+  const queryClient = useQueryClient();
+
+  const { data: categoriesData, isLoading } = useQuery({
     queryKey: ["categories-with-counts"],
     queryFn: getCategoriesWithCounts,
-    initialData: (Array.isArray(initialData) && initialData.length > 0) ? initialData : undefined,
+    initialData: () => {
+      if (Array.isArray(initialData) && initialData.length > 0) return initialData;
+      const cached = queryClient.getQueryData(["categories-with-counts"]);
+      if (Array.isArray(cached) && cached.length > 0) return cached;
+      return undefined;
+    },
+    staleTime: 5 * 60 * 1000,
   });
 
   const categories = useMemo(() => {
@@ -41,7 +49,7 @@ export default function Categories({ initialData }) {
     }));
   }, [categoriesData]);
 
-  const showSkeleton = isLoading || (isFetching && categories.length === 0);
+  const showSkeleton = isLoading && categories.length === 0;
 
   return (
     <section id="categories" className="bg-background py-6 sm:py-10">

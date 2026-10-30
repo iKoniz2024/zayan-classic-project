@@ -13,10 +13,14 @@ export const getProductById = async (id) => {
 
 export const getRelatedProducts = async (id, category = "") => {
   try {
+    if (!id) return [];
+    const { data } = await axiosPublic.get(`/products/${id}/related`);
+    const prods = Array.isArray(data) ? data : (data?.products || []);
+    if (prods.length > 0) return prods;
+
     const params = category ? { category, limit: 12 } : { limit: 12 };
     const res = await getProducts(params);
-    const prods = res?.products || (Array.isArray(res) ? res : []);
-    return prods.filter((p) => String(p._id) !== String(id)).slice(0, 12);
+    return (res?.products || (Array.isArray(res) ? res : [])).filter((p) => String(p._id) !== String(id)).slice(0, 12);
   } catch {
     return [];
   }

@@ -9,7 +9,7 @@ export async function generateMetadata({ params }) {
     const baseUrl = getApiUrl();
     const res = await fetch(`${baseUrl}/products/${id}`, {
       next: { revalidate: 300 },
-      signal: AbortSignal.timeout(3000),
+      signal: AbortSignal.timeout(1200),
     });
     if (res.ok) {
       const p = await res.json();
@@ -27,11 +27,11 @@ async function fetchProduct(id) {
     const baseUrl = getApiUrl();
     const res = await fetch(`${baseUrl}/products/${id}`, {
       next: { revalidate: 300 },
-      signal: AbortSignal.timeout(3500),
+      signal: AbortSignal.timeout(1200),
     });
     if (res.ok) return await res.json();
   } catch (err) {
-    console.error("Failed to fetch product on server:", err.message);
+    // Non-blocking fallback for instant client navigation
   }
   return null;
 }
@@ -39,5 +39,11 @@ async function fetchProduct(id) {
 export default async function Page({ params }) {
   const { id } = await params;
   const initialProduct = await fetchProduct(id);
-  return <ProductDetails initialProduct={initialProduct} id={id} />;
+
+  return (
+    <ProductDetails
+      initialProduct={initialProduct}
+      id={id}
+    />
+  );
 }

@@ -76,6 +76,7 @@ export default function ProductCard({ product, index, badge }) {
 
   const handlePrefetch = () => {
     if (product?._id) {
+      queryClient.setQueryData(["product", product._id], (old) => old || product);
       queryClient.prefetchQuery({
         queryKey: ["product", product._id],
         queryFn: () => getProductById(product._id),
