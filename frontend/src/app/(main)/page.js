@@ -5,43 +5,45 @@ export const metadata = {
   title: "Home",
 };
 
-export const revalidate = 60;
+export const revalidate = 300;
+
+async function fetchWithTimeout(url, revalidateSec, timeoutMs = 2500) {
+  try {
+    const res = await fetch(url, {
+      next: { revalidate: revalidateSec },
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    if (res.ok) return await res.json();
+  } catch (err) {
+    // Non-blocking fallback
+  }
+  return null;
+}
 
 async function fetchHomeData() {
   const baseUrl = getApiUrl();
 
-  try {
-    const [
-      categoriesRes,
-      newArrivalsRes,
-      bestSellingRes,
-      flashSaleRes,
-      bannersRes
-    ] = await Promise.all([
-      fetch(`${baseUrl}/categories`, { next: { revalidate: 300 } }),
-      fetch(`${baseUrl}/products/new-arrivals`, { next: { revalidate: 60 } }),
-      fetch(`${baseUrl}/products/best-sellers`, { next: { revalidate: 60 } }),
-      fetch(`${baseUrl}/products/flash-sale`, { next: { revalidate: 60 } }),
-      fetch(`${baseUrl}/banners`, { next: { revalidate: 300 } }),
-    ]);
+  const [
+    categoriesData,
+    newArrivalsData,
+    bestSellingData,
+    flashSaleData,
+    bannersData,
+  ] = await Promise.all([
+    fetchWithTimeout(`${baseUrl}/categories`, 300),
+    fetchWithTimeout(`${baseUrl}/products/new-arrivals`, 300),
+    fetchWithTimeout(`${baseUrl}/products/best-sellers`, 300),
+    fetchWithTimeout(`${baseUrl}/products/flash-sale`, 300),
+    fetchWithTimeout(`${baseUrl}/banners`, 300),
+  ]);
 
-    return {
-      categoriesData: categoriesRes.ok ? await categoriesRes.json() : [],
-      newArrivalsData: newArrivalsRes.ok ? await newArrivalsRes.json() : { products: [] },
-      bestSellingData: bestSellingRes.ok ? await bestSellingRes.json() : { products: [] },
-      flashSaleData: flashSaleRes.ok ? await flashSaleRes.json() : { products: [] },
-      bannersData: bannersRes.ok ? await bannersRes.json() : [],
-    };
-  } catch (err) {
-    console.error("Failed to fetch home page data:", err.message);
-    return {
-      categoriesData: [],
-      newArrivalsData: { products: [] },
-      bestSellingData: { products: [] },
-      flashSaleData: { products: [] },
-      bannersData: [],
-    };
-  }
+  return {
+    categoriesData: categoriesData || [],
+    newArrivalsData: newArrivalsData || { products: [] },
+    bestSellingData: bestSellingData || { products: [] },
+    flashSaleData: flashSaleData || { products: [] },
+    bannersData: bannersData || [],
+  };
 }
 
 export default async function Page() {

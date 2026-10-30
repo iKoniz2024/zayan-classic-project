@@ -30,6 +30,7 @@ export async function generateMetadata() {
     const apiUrl = getApiUrl();
     const res = await fetch(`${apiUrl}/settings`, {
       next: { revalidate: 3600 }, // Cache for 1 hour
+      signal: AbortSignal.timeout(1500),
     });
     
     if (res.ok) {
@@ -47,7 +48,7 @@ export async function generateMetadata() {
       }
     }
   } catch (error) {
-    console.warn("Could not fetch metadata settings: backend is offline or unreachable.");
+    // If backend is cold/slow, don't block initial page load
   }
 
   return defaultMetadata;
