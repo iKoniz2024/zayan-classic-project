@@ -18,6 +18,7 @@ import {
   Store,
   ChevronDown,
   Ruler,
+  X,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { getProductById } from "@/services/product.api";
@@ -69,6 +70,7 @@ export default function ProductDetails({ initialProduct, initialRelatedProducts,
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("description");
   const [shareUrl, setShareUrl] = useState("");
+  const [showSizeModal, setShowSizeModal] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -82,6 +84,15 @@ export default function ProductDetails({ initialProduct, initialRelatedProducts,
     queryKey: ["product", id],
     queryFn: () => getProductById(id),
     initialData: () => {
+      // Only treat as authoritative initialData if it's a complete product object
+      const hasFullDetails = (p) =>
+        p && (p.images?.length > 1 || (p.sizeMeasurements && p.sizeMeasurements.length > 0) || p.description || p.sizeChart);
+      if (hasFullDetails(initialProduct)) return initialProduct;
+      const cached = queryClient.getQueryData(["product", id]);
+      if (hasFullDetails(cached)) return cached;
+      return undefined;
+    },
+    placeholderData: () => {
       if (initialProduct) return initialProduct;
       const cached = queryClient.getQueryData(["product", id]);
       if (cached) return cached;
@@ -143,10 +154,15 @@ export default function ProductDetails({ initialProduct, initialRelatedProducts,
     if (product.thumbnail) imgs.push(product.thumbnail);
     if (product.images?.length) {
       product.images.forEach((img) => {
-        if (img !== product.thumbnail) imgs.push(img);
+        if (img && !imgs.includes(img)) imgs.push(img);
       });
     }
-    return imgs.length > 0 ? imgs : [product.thumbnail];
+    if (product.colors?.length) {
+      product.colors.forEach((c) => {
+        if (c?.image && !imgs.includes(c.image)) imgs.push(c.image);
+      });
+    }
+    return imgs.length > 0 ? imgs : (product.thumbnail ? [product.thumbnail] : []);
   }, [product]);
 
   const hasDiscount = product?.discountPercentage > 0;
@@ -296,7 +312,7 @@ export default function ProductDetails({ initialProduct, initialRelatedProducts,
 
       if (columnKeys.length > 0) {
         return (
-          <div className="mt-4 overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+          <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
             <div className="bg-muted py-2.5 text-center text-sm font-bold text-foreground border-b border-border flex items-center justify-center gap-2">
               <Ruler className="size-4 text-primary" />
               Size Measurement (Inches)
@@ -334,7 +350,7 @@ export default function ProductDetails({ initialProduct, initialRelatedProducts,
 
     if (product?.sizeChart && !product.sizeChart.includes("placehold.co")) {
       return (
-        <div className="mt-4 overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+        <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
           <div className="bg-muted py-2.5 text-center text-sm font-bold text-foreground border-b border-border flex items-center justify-center gap-2">
             <Ruler className="size-4 text-primary" />
             Size Measurement
@@ -495,6 +511,16 @@ export default function ProductDetails({ initialProduct, initialRelatedProducts,
                   <span className="text-sm font-bold text-foreground">
                     Select Size :
                   </span>
+                  {(product?.sizeMeasurements?.length > 0 || (product?.sizeChart && !product.sizeChart.includes("placehold.co"))) && (
+                    <button
+                      type="button"
+                      onClick={() => setShowSizeModal(true)}
+                      className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline cursor-pointer"
+                    >
+                      <Ruler className="size-3.5" />
+                      Size Guide (পরিমাপ চার্ট)
+                    </button>
+                  )}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {product.sizes.map((size) => (
@@ -609,6 +635,9 @@ export default function ProductDetails({ initialProduct, initialRelatedProducts,
 
           {/* Right - Extra Info lg:w-[30%] */}
           <div className="flex flex-col gap-4 lg:w-[30%]">
+            {/* Dynamic Size Measurement Block */}
+            {renderSizeMeasurementTable()}
+
             {/* Policies */}
             <div className="rounded border-2 border-dashed border-foreground p-4 text-xs font-medium text-foreground">
               <ul className="space-y-3">
@@ -630,9 +659,6 @@ export default function ProductDetails({ initialProduct, initialRelatedProducts,
                 </li>
               </ul>
             </div>
-
-            {/* Dynamic Size Measurement Block */}
-            {renderSizeMeasurementTable()}
           </div>
         </div>
 
@@ -686,6 +712,36 @@ export default function ProductDetails({ initialProduct, initialRelatedProducts,
         {/* Related Products Section */}
         <RelatedProducts currentProduct={product} initialData={initialRelatedProducts} />
       </div>
+
+      {/* Size Guide Modal */}
+      {showSizeModal && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-200"
+          onClick={() => setShowSizeModal(false)}
+        >
+          <div 
+            className="relative w-full max-w-lg rounded-xl border border-border bg-card p-5 sm:p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2 text-base font-bold text-foreground">
+                <Ruler className="size-5 text-primary" />
+                Size Measurement Guide (পরিমাপ নির্দেশিকা)
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSizeModal(false)}
+                className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+            <div className="mt-4 max-h-[75vh] overflow-y-auto">
+              {renderSizeMeasurementTable()}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
