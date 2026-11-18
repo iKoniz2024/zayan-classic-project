@@ -9,6 +9,7 @@ import { Toaster } from "react-hot-toast";
 import { HelmetProvider } from "react-helmet-async";
 import useSettings from "@/hooks/useSettings";
 import MetaPixel from "@/components/MetaPixel";
+import GoogleTagManager from "@/components/GoogleTagManager";
 
 import { Suspense } from "react";
 import NavigationProgressBar from "@/components/NavigationProgressBar";
@@ -41,6 +42,7 @@ export default function Providers({ children }) {
               </Suspense>
               <DynamicFaviconUpdater />
               <MetaPixel />
+              <GoogleTagManager />
               {children}
               <Toaster
                 position="top-right"

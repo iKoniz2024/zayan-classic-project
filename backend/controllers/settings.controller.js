@@ -20,7 +20,7 @@ const getSettings = async (req, res) => {
 
 const updateSettings = async (req, res) => {
   try {
-    const { siteName, logo, contactEmail, contactPhone, address, googleMapLink, facebookUrl, instagramUrl, tiktokUrl, youtubeUrl, metaPixelId, metaAccessToken, metaTestEventCode, metaPixels } = req.body;
+    const { siteName, logo, contactEmail, contactPhone, address, googleMapLink, facebookUrl, instagramUrl, tiktokUrl, youtubeUrl, metaPixelId, metaAccessToken, metaTestEventCode, metaPixels, gtmId } = req.body;
 
     const updateData = {};
 
@@ -38,6 +38,7 @@ const updateSettings = async (req, res) => {
     if (metaAccessToken !== undefined) updateData.metaAccessToken = metaAccessToken;
     if (metaTestEventCode !== undefined) updateData.metaTestEventCode = metaTestEventCode;
     if (metaPixels !== undefined) updateData.metaPixels = metaPixels;
+    if (gtmId !== undefined) updateData.gtmId = typeof gtmId === "string" ? gtmId.trim() : gtmId;
 
     if (Object.keys(updateData).length === 0) {
       return res.status(400).json({ message: "No data to update" });

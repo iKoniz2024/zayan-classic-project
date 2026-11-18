@@ -44,6 +44,7 @@ export default function AdminSettings({ children }) {
   const [instaEdited, setInstaEdited] = useState(false);
   const [tiktokEdited, setTiktokEdited] = useState(false);
   const [ytEdited, setYtEdited] = useState(false);
+  const [gtmId, setGtmId] = useState("");
 
   const [metaPixelsList, setMetaPixelsList] = useState([]);
   const [isPixelsLoaded, setIsPixelsLoaded] = useState(false);
@@ -61,6 +62,9 @@ export default function AdminSettings({ children }) {
 
   useEffect(() => {
     if (data && !isPixelsLoaded) {
+      if (data.gtmId) {
+        setGtmId(data.gtmId);
+      }
       if (Array.isArray(data.metaPixels) && data.metaPixels.length > 0) {
         setMetaPixelsList(
           data.metaPixels.map((p) => ({
@@ -121,6 +125,9 @@ export default function AdminSettings({ children }) {
       setInstaEdited(false);
       setTiktokEdited(false);
       setYtEdited(false);
+      if (updatedData?.gtmId !== undefined) {
+        setGtmId(updatedData.gtmId);
+      }
       if (Array.isArray(updatedData?.metaPixels)) {
         setMetaPixelsList(updatedData.metaPixels);
       }
@@ -203,6 +210,7 @@ export default function AdminSettings({ children }) {
       metaAccessToken: primaryAccessToken,
       metaTestEventCode: primaryTestCode,
       metaPixels: validPixels,
+      gtmId: gtmId.trim(),
     });
   };
 
@@ -435,6 +443,32 @@ export default function AdminSettings({ children }) {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Google Tag Manager (GTM) Section */}
+        <div className="border-t border-border pt-6 space-y-4">
+          <div>
+            <h3 className="text-base font-semibold text-foreground">
+              Google Tag Manager (GTM)
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Paste your Google Tag Manager Container ID. It will automatically load across the entire website.
+            </p>
+          </div>
+
+          <div className="max-w-md">
+            <label className="mb-1 block text-xs font-medium text-muted-foreground">
+              GTM Container ID (No Token Needed)
+            </label>
+            <Input
+              value={gtmId}
+              onChange={(e) => setGtmId(e.target.value)}
+              placeholder="e.g. GTM-XXXXXXX"
+            />
+            <p className="mt-1.5 text-[11px] text-muted-foreground">
+              Format: <span className="font-mono text-primary font-semibold">GTM-XXXXXXX</span> (Find this at the top right of your GTM account)
+            </p>
+          </div>
         </div>
 
         <div className="border-t border-border pt-6 space-y-4">

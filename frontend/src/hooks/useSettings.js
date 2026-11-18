@@ -40,6 +40,7 @@ const useSettings = () => {
     youtubeUrl: data?.youtubeUrl || "",
     metaPixelId: data?.metaPixelId || "",
     metaPixels: Array.isArray(data?.metaPixels) ? data.metaPixels : [],
+    gtmId: data?.gtmId || "",
     isLoading,
   };
 };

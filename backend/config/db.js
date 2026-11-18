@@ -3,7 +3,9 @@ const dns = require('dns');
 const { setupIndexes } = require("../utils/setupIndexes");
 const { warmUpCache } = require("../utils/cache");
 
-dns.setServers(['8.8.8.8', '8.8.4.4']);
+try {
+    dns.setServers(['8.8.8.8', '8.8.4.4']);
+} catch (e) {}
 
 const dbUser = encodeURIComponent(process.env.DB_USER || "");
 const dbPass = encodeURIComponent(process.env.DB_PASS || "");

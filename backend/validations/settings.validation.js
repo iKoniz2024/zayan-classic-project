@@ -22,7 +22,8 @@ const updateSettingsSchema = z.object({
   metaAccessToken: z.string().trim().optional().default(""),
   metaTestEventCode: z.string().trim().optional().default(""),
   metaPixels: z.array(metaPixelSchema).optional().default([]),
-});
+  gtmId: z.string().trim().optional().default(""),
+}).passthrough();
 
 module.exports = {
   updateSettingsSchema,

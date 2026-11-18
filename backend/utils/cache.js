@@ -248,8 +248,7 @@ const warmUpCache = async (db) => {
 
             // 6. Warm up Site Settings
             withCache("siteSettings", 300, async () => {
-                const doc = await settingsCollection.findOne({ key: "site_settings" });
-                return doc?.value || null;
+                return await settingsCollection.findOne({});
             }),
 
             // 7. Warm up Products Catalog (Used for instantaneous search & filtering)
